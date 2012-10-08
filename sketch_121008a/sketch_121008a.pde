@@ -8,6 +8,7 @@ void setup() {
   rockets = new ArrayList();  // Create an empty ArrayList
   //rockets.add(new Rocket());
   gravity = new PVector(0, 9.81);
+  println("Press any key!");
 }
 
 void draw() {
@@ -31,7 +32,7 @@ void draw() {
 
 void keyPressed() {
   rockets.add(new Rocket()); // Add a new Rocket
-  println(rockets.size()); // print the number of Rockets
+  println("Number of active rockets: " + rockets.size()); // print the number of Rockets
 }
 
 class Rocket {
@@ -68,4 +69,3 @@ class Rocket {
     }
   }
 }
-
