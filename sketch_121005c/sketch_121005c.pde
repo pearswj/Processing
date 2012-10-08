@@ -4,7 +4,7 @@ Mover[] movers = new Mover[20];
 void setup() {
   size(600,600);
   smooth();
-  background(255);
+  background(0);
   // Initializing all the elements of the array
   for (int i = 0; i < movers.length; i++) {
     movers[i] = new Mover(); 
@@ -13,7 +13,7 @@ void setup() {
 
 void draw() {
   noStroke();
-  fill(255,10);
+  fill(0,20);
   rect(0,0,width,height);
 
   // Calling functions of all of the objects in the array.
@@ -64,8 +64,8 @@ class Mover {
   }
 
   void display() {
-    stroke(0);
-    fill(175);
+    noStroke();
+    fill(255);
     ellipse(location.x,location.y,diameter,diameter);
   }
 
