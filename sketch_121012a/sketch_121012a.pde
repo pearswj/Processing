@@ -1,20 +1,21 @@
+import processing.opengl.*;
+
 ArrayList rockets;
 PVector gravity;
 
 void setup() {
-  size(600,600);
+  size(600,600,OPENGL);
   smooth();
   background(0);
   rockets = new ArrayList();  // Create an empty ArrayList
   //rockets.add(new Rocket());
   gravity = new PVector(0, 9.81);
   println("Press any key!");
+  //hint(DISABLE_DEPTH_TEST);
 }
 
 void draw() {
-  noStroke();
-  fill(0,20);
-  rect(0,0,width,height);
+  //background(0);
   for (int i = 0; i < rockets.size(); i++) {
     // We must cast each item in the ArrayList so that it knows about Rocket's
     // member functions
@@ -26,8 +27,9 @@ void draw() {
     rocket.update();
     rocket.render();
   }
-  fill(255,10);
-  ellipse(width/2,3*height/4,16,16);
+  stroke(255,20);
+  strokeWeight(16);
+  point(width/2,3*height/4,0);
 }
 
 void keyPressed() {
@@ -42,8 +44,8 @@ class Rocket {
   float diameter;
 
   Rocket() {
-    location = new PVector(width/2,3*height/4);
-    velocity = new PVector(random(-4,4),-10); // Randomise starting angle
+    location = new PVector(width/2,3*height/4,0);
+    velocity = new PVector(random(-4,4),-10,random(-4,4)); // Randomise starting angle
     velocity.normalize();
     velocity.mult(12); // Velocity
     diameter = 16;
@@ -55,9 +57,9 @@ class Rocket {
   }
 
   void render() {
-    noStroke();
-    fill(255);
-    ellipse(location.x,location.y,diameter,diameter);
+    stroke(255,20);
+    strokeWeight(diameter);
+    point(location.x,location.y,location.z);
   }
   
   boolean finished() {
