@@ -1,3 +1,5 @@
+// Fireworks by Will Pearson, University of Bath
+
 import processing.opengl.*;
 
 Factory factory;
@@ -5,13 +7,11 @@ PVector gravity;
 
 void setup() {
   size(600, 600, OPENGL);
-  //translate(width/2, 3*height/4);
   smooth();
   background(0);
   factory = new Factory();
   gravity = new PVector(0, 9.81);
   println("Press the \"?\" key for help!");
-  //hint(DISABLE_DEPTH_TEST);
 }
 
 void draw() {
@@ -19,13 +19,16 @@ void draw() {
   stroke(255, 20);
   strokeWeight(16);
   point(width/2, 3*height/4, 0);
+  
   factory.update();
   factory.draw();
+  
   //if (frameRate < 60 == false) {
   //  factory.add(new Shell(25));
   //}
 }
 
+// Handle key press events.
 void keyPressed() {
   if (key == '1') {
     factory.add(new Simple()); // Add a new simple firework
@@ -49,7 +52,8 @@ class Factory {
   Factory() {
     active = new Stack<Firework>();
   }
-
+  
+  // Update: update fireworks, replacing those that have died with their payload (where available).
   void update() {
     List<Firework> temp = new Stack<Firework>();
     for (Firework f : this.active) {
@@ -64,16 +68,20 @@ class Factory {
     this.active = temp;
   }
 
+  // Draw: iterate through the active list and display the fireworks on screen.
   void draw() {
     for (Firework itr : this.active) {
       itr.draw();
     }
   }
-
+  
+  // Add: add a new firework to the active list.
   void add(Firework f) {
     this.active.add(f);
   }
-
+  
+  // Debug: for debugging puposes
+  // TODO: extend to display current structure of the active list
   void debug() {
     println(active.size());
   }
@@ -90,44 +98,51 @@ interface Firework {
   PVector velocity();
 }
 
+// Simple firework:
 // A simple (mortar type) firework with no payload
 class Simple implements Firework {
 
   PVector location;
   PVector velocity;
   float diameter;
-  //List<Firework> payload = null;
+  List<Firework> payload = null;
 
   Simple() {
     this.location = new PVector(width/2, 3*height/4, 0);
     this.velocity = new PVector(random(-4, 4), -10, random(-4, 4)); // Randomise starting angle
-    this.velocity.setMag(random(8, 12));
+    this.velocity.setMag(random(8, 12)); // Randomise magnatude of starting velocity
     this.diameter = 10;
   }
 
+  // Update: updates the velocity and the location of the firework.
   void update() {
     this.velocity.add(PVector.div(gravity, frameRate));
     this.location.add(velocity);
   }
 
+  // Draw: display the firework at it's current location.
   void draw() {
     stroke(255, 70);
     strokeWeight(this.diameter);
     point(this.location.x, this.location.y, this.location.z);
   }
 
+  // Alive: returns false if the firework has hit the ground.
   boolean alive() {
     return (this.location.y <= 3*height/4);
   }
   
+  // Payload: return null (simple firework with no payload).
   List<Firework> payload() {
-    return null;
+    return this.payload;
   }
   
+  // Location: return the location vector.
   PVector location() {
     return this.location;
   }
   
+  // Velocity: return the velocity vector.
   PVector velocity() {
     return this.velocity;
   }
@@ -138,20 +153,22 @@ class Shell extends Simple {
   
   int fuse;
   PVector[] s;
-  List<Firework> payload;
 
   Shell(int n) {
     super();
     this.fuse = 50;
+    // Create the payload:
     this.payload = new Stack<Firework>();
     for (int i = 0; i < n; i++) {
       this.payload.add(new Simple());
     }
-    // Create array of secondary velocities
+    // Create and store array of secondary velocities:
     s = this.distributeOnSphere(n);
     this.diameter = 20;
   }
-
+  
+  // Update: extends Simple.update().
+  // (Also updates fuse and initialises the payload if the firework has died.)
   void update() {
     super.update();
     this.fuse--;
@@ -163,15 +180,14 @@ class Shell extends Simple {
       }
     }
   }
-
+  
+  // Alive: replaces Simple.alive().
+  // (Status of Shell fireworks also depends on the fuse.)
   boolean alive() {
     return (this.fuse > 0 && this.location.y <= 3*height/4);
   }
   
-  List<Firework> payload() {
-    return this.payload;
-  }
-  
+  // Distribute on a sphere: returns an array of location vectors randomly distributed on the surface of a sphere.
   PVector[] distributeOnSphere(int n) {
         PVector[] distro = new PVector[n];
     for (int i = 0; i < distro.length; i++) {
