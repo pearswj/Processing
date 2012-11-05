@@ -1,1 +1,6 @@
 .DS_Store
+applet
+web-export
+application.*
+sketch.properties
+*.diff
