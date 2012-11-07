@@ -5,7 +5,8 @@ Will Pearson, University of Bath, November 2012.
 Click & drag based on http://processing.org/learning/topics/springs.html
 **/
 
-Chain chain;
+Chain chain; // A simple chain
+Ball ball; // Fixed ball for the chain to drape over
 PVector gravity;
 
 void setup() {
@@ -16,23 +17,31 @@ void setup() {
   // Create a chain - Chain(from, to, number of links)
   chain = new Chain(new PVector(60, 108, 0), new PVector(600, 300, 0), 30);
 
-  gravity = new PVector(0, 1.8);
+  // Create ball
+  ball = new Ball(new PVector(450, 400, 0), 200);
+  
+  gravity = new PVector(0, 2, 0);
 }
 
 void draw() {
   background(255);    
   for (int i=0; i<10; i++) { // Update chain 10x each frame
     chain.update();
+    chain.detectCollision(ball);
   }
   chain.draw();
+  ball.update();
+  ball.draw();
 }
 
 void mousePressed() {
   chain.mousePressed();
+  ball.mousePressed();
 }
 
 void mouseReleased() {
   chain.mouseReleased();
+  ball.mouseReleased();
 }
 
 class Chain extends Manifold {
@@ -55,4 +64,3 @@ class Chain extends Manifold {
     }
   }
 }
-

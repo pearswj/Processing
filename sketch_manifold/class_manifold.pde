@@ -1,6 +1,10 @@
-// --------------------------
-// Manifold/Node/Link classes
-// --------------------------
+/**
+The following classes contain topological information and properties of structural elements (to be separated at a later date).  
+**/
+
+/////////////////////////////////////////////////////////////
+//                     Manifold Class                      //
+/////////////////////////////////////////////////////////////
 
 class Manifold {
   List<Node> nodes;
@@ -42,26 +46,23 @@ class Manifold {
   void update() {
     // Initalise force on nodes (gravity):
     for (Node n : this.nodes) {
-      n.force.set(gravity);
       // Set [mouse]over boolean (only true if the mouse isn't over any other nodes)
       if (!overOther(n) && n.mouseOver()) {
         n.over = true;
       } else {
         n.over = false;
       }
-    }
-    // Calculate member forces and add to nodes:
-    // (maybe this should be refactored into the Link class...)
-    for (Link l : this.links) {
-      PVector deltaCoord = PVector.sub(l.to.location, l.from.location);
-      float currentLength = deltaCoord.mag();
-      float strain = (currentLength - l.originalLength) / l.originalLength;
-      float forceDensity = strain * l.axialStiffness;
-      l.from.force.add(PVector.mult(deltaCoord, forceDensity));
-      l.to.force.sub(PVector.mult(deltaCoord, forceDensity));
-    }
-    // Update location of all nodes:
-    for (Node n : this.nodes) {
+      
+      // Calculate nodal forces from link strain.
+      n.force.set(gravity);
+      for (Link l : n.links) {
+        float strain = (l.length() - l.originalLength) / l.originalLength;
+        float forceDensity = strain * l.axialStiffness;
+        n.force.add(PVector.mult(l.direction(n), forceDensity));
+      }
+      n.force.div(n.mass);
+      
+      // Update node positions.
       n.update();
     }
   }
@@ -140,13 +141,39 @@ class Manifold {
       n.released();
     }
   }
+  
+  // Accessor functions:
+  // -------------------
+  
+  List<Node> nodes() {
+    return this.nodes;
+  }
+  
+  List <Link> links() {
+    return this.links;
+  }
+  
+  // Collision detection:
+  // --------------------
+  
+  void detectCollision(Ball b) {
+    for (Node n : this.nodes) {
+      n.detectCollision(b);
+    }
+  }
 }
+
+/////////////////////////////////////////////////////////////
+//                       Node Class                        //
+//                         (free)                          //
+/////////////////////////////////////////////////////////////
 
 class Node {
 
   List<Link> links;
   PVector location, velocity, force;
   boolean over = false, move = false;
+  float mass = 1.0;
 
   Node(PVector location) {
     this.velocity = new PVector(0, 0);
@@ -159,9 +186,9 @@ class Node {
     if (this.move) {
       this.location.set(mouseX, mouseY, 0);
     } else {
-      this.velocity.mult(0.99);
-      this.velocity.add(PVector.mult(this.force, 0.25));
-      this.location.add(PVector.mult(this.velocity, 0.25));
+      this.velocity.mult(0.99); // damping
+      this.velocity.add(PVector.div(this.force, frameRate*frameRate));
+      this.location.add(this.velocity);
     }
   }
 
@@ -194,7 +221,19 @@ class Node {
       strokeWeight(10);
     }
   }
+  
+  void detectCollision(Ball b) {
+    PVector m = PVector.sub(this.location, b.location);
+    if (m.mag() < b.r) {
+      m.setMag(b.r);
+      this.location = PVector.add(m, b.location);
+    }
+  }
 }
+
+//---------------------------------------------------------//
+//                       Fixed Node                        //
+//---------------------------------------------------------//
 
 class Fixed extends Node {
 
@@ -213,19 +252,26 @@ class Fixed extends Node {
       this.location.set(mouseX, mouseY, 0);
     }
   }
+  
+  void detectCollision(Ball b) {
+    // Do nothing!
+  }
 }
+
+/////////////////////////////////////////////////////////////
+//                       Link Class                        //
+/////////////////////////////////////////////////////////////
 
 class Link {
 
   Node from;
   Node to;
   float originalLength;
-  float axialStiffness; // E A / L
+  float axialStiffness = 100.0; // E A / L
 
   Link(Node from, Node to) {
     this.from = from;
     this.to = to;
-    this.axialStiffness = 1.0;
     this.originalLength = PVector.sub(to.location, from.location).mag();
   }
 
@@ -233,5 +279,25 @@ class Link {
     stroke(0, 150);
     strokeWeight(3);
     line(this.from.location.x, this.from.location.y, this.to.location.x, this.to.location.y);
+  }
+  
+  float length() {
+    // Return current length of link element
+    return (PVector.sub(this.from.location, this.to.location)).mag();
+  }
+  
+  PVector direction(Node n) {
+    // Return direction vector for link, oriented from stated node
+    // (null vector if node not at start or end of link)
+    PVector r = PVector.sub(this.to.location, this.from.location);
+    r.normalize();
+    if (n == this.from) {
+      return r;
+    } else if (n == this.to) {
+      r.mult(-1.0);
+    } else {
+      r.mult(0.0);
+    }
+    return r;
   }
 }
