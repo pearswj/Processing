@@ -4,3 +4,4 @@ web-export
 application.*
 sketch.properties
 *.diff
+libraries/*
