@@ -133,15 +133,15 @@ class Manifold {
   Manifold tetrahedron(float s) {
     // Create a tetrahedron with sidelength s, centered at the origin.
     // (To be generalised into an pyramid creator.)
+    int n = 3; // number of sides on base (TODO: implement as argument)
     Manifold t = new Manifold();
     
     s *= 0.5;
     t.addVertex(new PVector(s, 0, -s/sqrt(2)));
     t.addVertex(new PVector(-s, 0, -s/sqrt(2)));
-    t.addVertex(new PVector(0, s, s/sqrt(2)));
     t.addVertex(new PVector(0, -s, s/sqrt(2)));
+    t.addVertex(new PVector(0, s, s/sqrt(2))); // apex
     
-    int n = 3; // number of sides on base
     int[] base = new int[n];
     for (int i = 0; i < n; i++) {
       t.addFace(new int[]{i, (i+1)%n, n});
@@ -152,23 +152,23 @@ class Manifold {
     return t;
   }
   
-  Manifold cube(float s) {
+  Manifold prism(int n, float s) {
     // Create a cube with sidelength s, centered at the origin.
     // (To be generalised into a prism creator.)
     Manifold c = new Manifold();
-    s *= 0.5;
-    // Add vertices for top face (anticlockwise). 
-    c.addVertex(new PVector(s, s, s));
-    c.addVertex(new PVector(s, s, -s));
-    c.addVertex(new PVector(-s, s, -s));
-    c.addVertex(new PVector(-s, s, s));
-    // Add vertices for bottom face (anticlockwise).
-    c.addVertex(new PVector(s, -s, s));
-    c.addVertex(new PVector(s, -s, -s));
-    c.addVertex(new PVector(-s, -s, -s));
-    c.addVertex(new PVector(-s, -s, s));
     
-    int n = 4; // number of sides on top/bottom
+    float a = 2 * PI / n;
+    float m = (0.5*s) / sin(0.5*a);
+    s *= 0.5;
+    
+    // Add vertices for top face (anticlockwise). 
+    for (int i = 0; i < n; i++) {
+      c.addVertex(new PVector(m * sin((0.5 - i) * a), -s, m * cos((0.5 - i) * a)));
+    }
+    // Add vertices for bottom face (anticlockwise).
+    for (int i = 0; i < n; i++) {
+      c.addVertex(new PVector(m * sin((0.5 - i) * a), s, m * cos((0.5 - i) * a)));
+    }
     
     // Add top/bottom faces.
     int[] top = new int[n];
@@ -176,7 +176,6 @@ class Manifold {
     for (int i = 0; i < n; i++) {
       top[i] = i;
       bottom[i] = 2 * n - (i + 1);
-      println(top[i] + " " + bottom[i]);
     }
     c.addFace(top);
     c.addFace(bottom);
@@ -187,6 +186,61 @@ class Manifold {
     }
     
     return c;
+  }
+  
+  Manifold prism(int n) {
+    // Simpler method for sidelength 1 (might depricate sidelength anyway as it doesn't really work for n sided prisms...)
+    return this.prism(n, 1); //.toSphere();
+  }
+  
+  Manifold antiprism(int n, float s) {
+    // Create a cube with sidelength s, centered at the origin.
+    // (To be generalised into a prism creator.)
+    Manifold c = new Manifold();
+    
+    float a = 2 * PI / n;
+    float m = (0.5*s) / sin(0.5*a); // copied from prism (TODO: figure out how to generate a uniform antiprism)
+    s *= 0.5; 
+    
+    // Add vertices for top face (anticlockwise). 
+    for (int i = 0; i < n; i++) {
+      c.addVertex(new PVector(m * cos((0.5 - i) * a), -s, m * sin((0.5 - i) * a)));
+    }
+    // Add vertices for bottom face (anticlockwise).
+    for (int i = 0; i < n; i++) {
+      c.addVertex(new PVector(m * cos(-i * a), s, m * sin(-i * a)));
+    }
+    
+    // Add top/bottom faces.
+    int[] top = new int[n];
+    int[] bottom = new int[n];
+    for (int i = 0; i < n; i++) {
+      top[i] = i;
+      bottom[i] = 2 * n - (i + 1); // reverse order
+    }
+    c.addFace(top);
+    c.addFace(bottom);
+    
+    // Add side faces.
+    for (int i = 0; i < n; i++) {
+      c.addFace(new int[]{i, (i+1)%n, i+n});
+      c.addFace(new int[]{(i+1)%n, (i+1)%n+n, i+n});
+    }
+    
+    return c;
+  }
+  
+  Manifold antiprism(int n) {
+    // See prism short method.
+    return this.antiprism(n, 1);
+  }
+  
+  void toSphere() {
+    // Project vertices onto a unit sphere.
+    // Note: assumes that the centroid of the manifold is at the origin.
+    for (Vertex v : this.vertices) {
+      v.position.setMag(1);
+    }
   }
 }
 

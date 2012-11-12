@@ -20,13 +20,20 @@ void setup() {
   manifold = new Manifold();
   
   //manifold = manifold.tetrahedron(1);
-  manifold = manifold.cube(1);
+  manifold = manifold.prism(5, 1);
+  //manifold = manifold.antiprism(8);
+
+  manifold.toSphere();
+    
+  println("Vertices: " + manifold.vertices().size());
+  println("Edges: " + manifold.edges().size());
+  println("Faces: " + manifold.faces().size());
 }
 
 void draw() {
   // Center and rotate.
   translate(width/2, height/2);
-  scale(200);
+  scale(150);
   rotateX(radians(rot));
   rotateY(radians(rot));
   rot++;
@@ -34,7 +41,7 @@ void draw() {
   background(255);
   lights();
   
-  //manifold.drawFaces();
+  manifold.drawFaces();
   manifold.drawEdges();
   manifold.drawVertices();
 }
