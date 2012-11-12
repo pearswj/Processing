@@ -19,8 +19,8 @@ void setup() {
   // Manually create tetrahedron for testing puposes.
   manifold = new Manifold();
   
-  //manifold = manifold.tetrahedron(1);
-  manifold = manifold.prism(5, 1);
+  manifold = manifold.pyramid(3, 1, true);
+  //manifold = manifold.prism(5, 1);
   //manifold = manifold.antiprism(8);
 
   manifold.toSphere();
