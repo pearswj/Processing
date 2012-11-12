@@ -23,7 +23,7 @@ class Vertex {
     fill(0);
     pushMatrix();
     translate(this.position.x, this.position.y, this.position.z);
-    sphere(0.5);
+    sphere(0.02);
     popMatrix();
   }
 }
@@ -47,7 +47,7 @@ class Edge {
 
   void draw() {
     stroke(0);
-    strokeWeight(0.5);
+    strokeWeight(2);
     line(this.start.position.x, this.start.position.y, this.start.position.z, this.end.position.x, this.end.position.y, this.end.position.z);
   }
 }
