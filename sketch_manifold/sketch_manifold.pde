@@ -12,7 +12,7 @@ float rot = 0; // To hold the cumulative rotation.
 Manifold manifold, dual;
 
 void setup() {
-  size(800, 800, OPENGL);
+  size(700, 700, OPENGL);
   smooth(4);
   
   //cam = new PeasyCam(this, 100);
@@ -45,7 +45,8 @@ void draw() {
   
   // Draw manifolds.
   manifold.drawEdges();
-  dual.drawFaces();
+  //manifold.drawFaces(true);
+  dual.drawFaces(true);
   dual.drawEdges();
   dual.drawVertices();
 }

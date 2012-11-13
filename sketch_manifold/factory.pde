@@ -112,11 +112,11 @@ class Factory {
     
     // Add vertices for top face (anticlockwise). 
     for (int i = 0; i < n; i++) {
-      c.addVertex(new PVector(m * cos((0.5 - i) * a), -s, m * sin((0.5 - i) * a)));
+      c.addVertex(new PVector(m * sin((0.5 - i) * a), -s, m * cos((0.5 - i) * a)));
     }
     // Add vertices for bottom face (anticlockwise).
     for (int i = 0; i < n; i++) {
-      c.addVertex(new PVector(m * cos(-i * a), s, m * sin(-i * a)));
+      c.addVertex(new PVector(m * cos(i * a), s, m * sin(i * a)));
     }
     
     // Add top/bottom faces.
@@ -131,8 +131,8 @@ class Factory {
     
     // Add side faces.
     for (int i = 0; i < n; i++) {
-      c.addFace(new int[]{i, (i+1)%n, i+n});
-      c.addFace(new int[]{(i+1)%n, (i+1)%n+n, i+n});
+      c.addFace(new int[]{(i+1)%n, i, i+n});
+      c.addFace(new int[]{(i+1)%n, i+n, (i+1)%n+n});
     }
     
     return c;

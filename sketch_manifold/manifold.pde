@@ -51,10 +51,11 @@ class Manifold {
       Vertex end = vertices[(i+1)%vertices.length];
       Edge e = this.findEdge(start, end);
       if (e != null) {
-        e.right = f;
-        f.edges[i] = e; // Add edge to face.
+        e.right = f; // check that there isn't already an edge in this direction (face created wrong...)
+        //f.edges[i] = e; // Add edge to face.
       } else {
-        f.edges[i] = this.addEdge(start, end, f);
+        this.addEdge(start, end, f);
+        //f.edges[i] = this.addEdge(start, end, f);
       }
     }   
     this.faces.add(f);
@@ -65,6 +66,7 @@ class Manifold {
     // Add a new face, described by vertex indices
     // TODO: catch 'index out of bounds' errors
     Vertex[] vertices = new Vertex[vIndex.length];
+    println("Got this far!");
     for (int i = 0; i < vIndex.length; i++) {
       vertices[i] = this.vertices.get(vIndex[i]);
     }
@@ -102,10 +104,14 @@ class Manifold {
     }
   }
   
-  void drawFaces() {
+  void drawFaces(boolean normals) {
     for (Face f : this.faces) {
-      f.draw();
+      f.draw(normals);
     }
+  }
+    
+  void drawFaces() {
+    this.drawFaces(false);
   }
   
   //---------------------------------------------------------//
@@ -197,10 +203,10 @@ class Manifold {
     println("Faces: " + manifold.faces().size());
     if (detail) {
       for (Face f : this.faces) {
-        print("* " + f + ":");
-        for (Edge fe : f.edges) {
-          print("\t" + fe);
-        }
+        //print("* " + f + ":");
+        //for (Edge fe : f.edges) {
+        //  print("\t" + fe);
+        //}
         println();
       }
     }

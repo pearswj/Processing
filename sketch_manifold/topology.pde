@@ -40,7 +40,7 @@ class Vertex {
       for (int i = 0; i < n; i++) {
         Face f;
         Edge e = sorted.get(i); // Last edge in sorted list.
-        if (this == e.end) {
+        if (this == e.start) {
           f = e.left;
         } else {
           f = e.right;
@@ -91,14 +91,15 @@ class Edge {
 class Face {
   
   Vertex[] vertices;
-  Edge[] edges;
+  //Edge[] edges;
   
   Face(Vertex[] vertices) {
     this.vertices = vertices;
-    this.edges = new Edge[vertices.length];
+    //this.edges = new Edge[vertices.length];
   }
   
-  void draw() {
+  void draw(boolean normals) {
+    // TODO: draw faces by finding centroid and construction a 'fan'  
     noStroke();
     fill(204, 102, 0);
     beginShape();
@@ -106,6 +107,18 @@ class Face {
       vertex(v.position.x, v.position.y, v.position.z);
     }
     endShape(CLOSE);
+    if (normals) {
+      // draw normals
+      PVector a = this.centroid();
+      PVector b = PVector.add(this.centroid(), PVector.mult(this.normal(), 0.5));
+      strokeWeight(1);
+      stroke(0);
+      line(a.x, a.y, a.z, b.x, b.y, b.z);
+    }
+  }
+  
+  void draw() {
+    this.draw(false);
   }
   
   PVector centroid() {
@@ -115,5 +128,14 @@ class Face {
     }
     c.div(this.vertices.length);
     return c;
+  }
+  
+  PVector normal() {
+    PVector n = new PVector();
+    for (int i=0; i<this.vertices.length; i++) {
+      n.add(this.vertices[i].position.cross(this.vertices[(i+1)%this.vertices.length].position));
+    }
+    n.normalize();
+    return n;
   }
 }
