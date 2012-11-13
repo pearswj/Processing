@@ -1,7 +1,12 @@
 /**
+
+Topological classes.
+Will Pearson, University of Bath, November 2012.
+
 * Vertex class
 * Edge class
 * Face class
+
 **/
 
 /////////////////////////////////////////////////////////////
@@ -11,7 +16,7 @@
 class Vertex {
 
   PVector position;
-  List<Edge> edges;
+  List<Edge> edges; // When you create a vertex, the number of edges is unknown.
 
   Vertex(PVector position) {
     this.position = position.get();
@@ -25,6 +30,32 @@ class Vertex {
     translate(this.position.x, this.position.y, this.position.z);
     sphere(0.02);
     popMatrix();
+  }
+  
+  void sortEdges() {
+    if (!this.edges.isEmpty()) {
+      List<Edge> sorted = new ArrayList<Edge>();
+      sorted.add(this.edges.remove(0));
+      int n = this.edges.size(); // Store this somewhere safe...
+      for (int i = 0; i < n; i++) {
+        Face f;
+        Edge e = sorted.get(i); // Last edge in sorted list.
+        if (this == e.end) {
+          f = e.left;
+        } else {
+          f = e.right;
+        }
+        // Find the next edge (the one with face f on one side).
+        for (Edge en: this.edges) {
+          if (f == en.left || f == en.right) {
+            sorted.add(en);
+            this.edges.remove(en);
+            break;
+          }
+        }
+      }
+      this.edges = sorted;
+    }
   }
 }
 
@@ -42,6 +73,7 @@ class Edge {
   Edge(Vertex start, Vertex end, Face left) {
     this.start = start;
     this.end = end;
+    this.left = left;
     this.right = null;
   }
 
@@ -74,5 +106,14 @@ class Face {
       vertex(v.position.x, v.position.y, v.position.z);
     }
     endShape(CLOSE);
+  }
+  
+  PVector centroid() {
+    PVector c = new PVector(0, 0, 0);
+    for (Vertex v : this.vertices) {
+      c.add(v.position);
+    }
+    c.div(this.vertices.length);
+    return c;
   }
 }

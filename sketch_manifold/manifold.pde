@@ -1,5 +1,11 @@
 /**
-* Manifold class
+
+Manifold class.
+Will Pearson, University of Bath, November 2012.
+
+* pyramids, prisms and antiprisms
+* Conway operations
+
 **/
 
 /////////////////////////////////////////////////////////////
@@ -21,18 +27,19 @@ class Manifold {
   // Add a new vertex:
   // -----------------
   
-  void addVertex(Vertex v) {
+  Vertex addVertex(Vertex v) {
     this.vertices.add(v);
+    return v;
   }
   
-  void addVertex(PVector position) {
-    this.addVertex(new Vertex(position));
+  Vertex addVertex(PVector position) {
+    return this.addVertex(new Vertex(position));
   }
   
   // Add a new face:
   // ---------------
   
-  void addFace(Vertex[] vertices) {
+  Face addFace(Vertex[] vertices) {
     // Add a new face, described by its vertices.
     // Vertices must be supplied in anticlockwise order.
     Face f = new Face(vertices);
@@ -43,35 +50,38 @@ class Manifold {
       Edge e = this.findEdge(start, end);
       if (e != null) {
         e.right = f;
+        f.edges[i] = e; // Add edge to face.
       } else {
-        this.addEdge(start, end, f);
+        f.edges[i] = this.addEdge(start, end, f);
       }
     }   
     this.faces.add(f);
+    return f;
   }
   
-  void addFace(int[] vIndex) {
+  Face addFace(int[] vIndex) {
     // Add a new face, described by vertex indices
     // TODO: catch 'index out of bounds' errors
     Vertex[] vertices = new Vertex[vIndex.length];
     for (int i = 0; i < vIndex.length; i++) {
       vertices[i] = this.vertices.get(vIndex[i]);
     }
-    this.addFace(vertices);
+    return this.addFace(vertices);
   }
       
   
   // Add a new edge:
   // ---------------
   
-  void addEdge(Edge e) {
+  Edge addEdge(Edge e) {
     this.edges.add(e);
     e.start.edges.add(e);
     e.end.edges.add(e);
+    return e;
   }
   
-  void addEdge(Vertex start, Vertex end, Face left) {
-    this.addEdge(new Edge(start, end, left));
+  Edge addEdge(Vertex start, Vertex end, Face left) {
+    return this.addEdge(new Edge(start, end, left));
   }
   
   // Draw methods:
@@ -136,7 +146,6 @@ class Manifold {
     
     float a = 2 * PI / n;
     float m = (0.5*s) / sin(0.5*a);
-    println(m);
     float h; // height
     if (constrainLaterals && n < 6) {
       h = sqrt(sq(s) - sq(m)); // length of lateral edges == length of base edges (doesn't make sense for n >= 6!)
@@ -246,12 +255,74 @@ class Manifold {
     return this.antiprism(n, 1);
   }
   
+  // Conway Operations:
+  // ------------------
+  
+  Manifold dual() {
+    // Find the dual of the current manifold.
+    Manifold d = new Manifold();
+    for (Face f : this.faces) {
+      PVector c = f.centroid();
+      d.addVertex(c);
+    }
+    for (Vertex v : this.vertices) {
+      //Vertex[] fv = new Vertex[v.edges.size()];
+      List<Vertex> fv = new ArrayList<Vertex>();
+      v.sortEdges();
+      for (Edge e : v.edges) {
+        if (v == e.start) {
+          fv.add(d.vertices.get(this.faces.indexOf(e.right)));
+        } else {
+          fv.add(d.vertices.get(this.faces.indexOf(e.left)));
+        }
+      }
+      d.addFace(fv.toArray(new Vertex[v.edges.size()])); // convert ArrayList to Array
+    }
+    return d;
+  }
+  
+  // Other operations:
+  // -----------------
+  
   void toSphere() {
     // Project vertices onto a unit sphere.
     // Note: assumes that the centroid of the manifold is at the origin.
     for (Vertex v : this.vertices) {
       v.position.setMag(1);
     }
+  }
+  
+  // Debug...
+  // --------
+  
+  void debug(boolean detail) {
+    println("// " + this + "\n");
+    
+    println("Vertices: " + manifold.vertices().size());
+    if (detail) {
+      println();
+    }
+    
+    println("Edges: " + manifold.edges().size());
+    if (detail) {
+      for (Edge e : this.edges) {
+        println("* " + e + ":\t" + e.left + "\t" + e.right);
+      }
+      println();
+    }
+    
+    println("Faces: " + manifold.faces().size());
+    if (detail) {
+      for (Face f : this.faces) {
+        print("* " + f + ":");
+        for (Edge fe : f.edges) {
+          print("\t" + fe);
+        }
+        println();
+      }
+    }
+    
+    println();
   }
 }
 

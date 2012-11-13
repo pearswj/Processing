@@ -1,13 +1,15 @@
 /**
+
 Manifold and Conway Operations
 Will Pearson, University of Bath, November 2012.
+
 **/
 
 import peasy.*;
 //PeasyCam cam;
 float rot = 0; // To hold the cumulative rotation.
 
-Manifold manifold;
+Manifold manifold, dual;
 
 void setup() {
   size(800, 800, OPENGL);
@@ -24,10 +26,10 @@ void setup() {
   //manifold = manifold.antiprism(8);
 
   manifold.toSphere();
-    
-  println("Vertices: " + manifold.vertices().size());
-  println("Edges: " + manifold.edges().size());
-  println("Faces: " + manifold.faces().size());
+  dual = manifold.dual();
+  
+  manifold.debug(true);
+  dual.debug(true);
 }
 
 void draw() {
@@ -38,10 +40,13 @@ void draw() {
   rotateY(radians(rot));
   rot++;
   
+  // Misc.
   background(255);
   lights();
   
-  manifold.drawFaces();
+  // Draw manifolds.
   manifold.drawEdges();
-  manifold.drawVertices();
+  dual.drawFaces();
+  dual.drawEdges();
+  dual.drawVertices();
 }
