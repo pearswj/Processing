@@ -5,7 +5,7 @@ Will Pearson, University of Bath, November 2012.
 
 **/
 
-import peasy.*;
+//import peasy.*;
 //PeasyCam cam;
 float rot = 0; // To hold the cumulative rotation.
 
@@ -15,15 +15,14 @@ void setup() {
   size(800, 800, OPENGL);
   smooth(4);
   
-  // Set up Peasycam.
   //cam = new PeasyCam(this, 100);
   
   // Manually create tetrahedron for testing puposes.
-  manifold = new Manifold();
+  Factory factory = new Factory(); 
   
-  manifold = manifold.pyramid(3, 1, true);
-  //manifold = manifold.prism(5, 1);
-  //manifold = manifold.antiprism(8);
+  manifold = factory.pyramid(3, 1, true);
+  //manifold = factory.prism(5, 1);
+  //manifold = factory.antiprism(8);
 
   manifold.toSphere();
   dual = manifold.dual();
