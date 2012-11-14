@@ -59,20 +59,19 @@ class Factory {
   //---------------------------------------------------------//
   
   Manifold prism(int n, float s) {
-    // Create a prism with n-sided top/bottom, sidelength s and centered at the origin.
+    // Create a prism with n-sided top/bottom, side length s and centered at the origin.
     Manifold c = new Manifold();
     
-    float a = 2 * PI / n;
-    float m = (0.5*s) / sin(0.5*a);
-    s *= 0.5;
+    float a = 2 * PI / n; // angle
+    float R = (0.5*s) / sin(0.5*a); // radius
     
     // Add vertices for top face (anticlockwise, looking down). 
     for (int i = 0; i < n; i++) {
-      c.addVertex(new PVector(m * sin((0.5 - i) * a), -s, m * cos((0.5 - i) * a)));
+      c.addVertex(new PVector(R * cos(i * a), -0.5 * s, R * sin(i * a)));
     }
     // Add vertices for bottom face (anticlockwise, looking down).
     for (int i = 0; i < n; i++) {
-      c.addVertex(new PVector(m * sin((0.5 - i) * a), s, m * cos((0.5 - i) * a)));
+      c.addVertex(new PVector(R * cos(i * a), 0.5 * s, R * sin(i * a)));
     }
     
     // Add top/bottom faces.
@@ -103,20 +102,20 @@ class Factory {
   //---------------------------------------------------------//
   
   Manifold antiprism(int n, float s) {
-    // Create an antiprism with n-sided top/bottom, sidelength s (top/bottom only, for now) and centered at the origin.
+    // Create an antiprism with n-sided top/bottom, side length s (top/bottom only, for now) and centered at the origin.
     Manifold c = new Manifold();
     
-    float a = 2 * PI / n;
-    float m = (0.5*s) / sin(0.5*a); // copied from prism (TODO: figure out how to generate a uniform antiprism)
-    s *= 0.5; 
+    float a = 2 * PI / n; // angle
+    float R = (0.5*s) / sin(0.5*a); // radius
+    float h = sqrt(1 - 0.24 * sq(1/cos(PI/(2*n)))); // height (see http://mathworld.wolfram.com/Antiprism.html)
     
     // Add vertices for top face (anticlockwise). 
     for (int i = 0; i < n; i++) {
-      c.addVertex(new PVector(m * sin((0.5 - i) * a), -s, m * cos((0.5 - i) * a)));
+      c.addVertex(new PVector(R * cos(i * a), -0.5 * h, R * sin(i * a)));
     }
     // Add vertices for bottom face (anticlockwise).
     for (int i = 0; i < n; i++) {
-      c.addVertex(new PVector(m * cos(i * a), s, m * sin(i * a)));
+      c.addVertex(new PVector(R * cos((0.5 + i) * a), 0.5 * h, R * sin((0.5 + i) * a)));
     }
     
     // Add top/bottom faces.

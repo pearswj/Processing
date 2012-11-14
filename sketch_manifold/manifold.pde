@@ -66,7 +66,6 @@ class Manifold {
     // Add a new face, described by vertex indices
     // TODO: catch 'index out of bounds' errors
     Vertex[] vertices = new Vertex[vIndex.length];
-    println("Got this far!");
     for (int i = 0; i < vIndex.length; i++) {
       vertices[i] = this.vertices.get(vIndex[i]);
     }
@@ -207,7 +206,7 @@ class Manifold {
         //for (Edge fe : f.edges) {
         //  print("\t" + fe);
         //}
-        println();
+        //println();
       }
     }
     
