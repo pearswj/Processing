@@ -9,7 +9,7 @@ Will Pearson, University of Bath, November 2012.
 //PeasyCam cam;
 float rot = 0; // To hold the cumulative rotation.
 
-Manifold manifold, dual;
+Manifold manifold, test;
 
 void setup() {
   size(700, 700, OPENGL);
@@ -25,10 +25,10 @@ void setup() {
   //manifold = factory.antiprism(8);
 
   manifold.toSphere();
-  dual = manifold.dual();
+  test = manifold.catmullClark().catmullClark().catmullClark();
   
   manifold.debug(true);
-  dual.debug(true);
+  test.debug(true);
 }
 
 void draw() {
@@ -46,7 +46,7 @@ void draw() {
   // Draw manifolds.
   manifold.drawEdges();
   //manifold.drawFaces(true);
-  dual.drawFaces(true);
-  dual.drawEdges();
-  dual.drawVertices();
+  test.drawFaces(false);
+  //test.drawEdges();
+  //test.drawVertices();
 }

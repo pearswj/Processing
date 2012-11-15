@@ -5,6 +5,7 @@ Will Pearson, University of Bath, November 2012.
 
 * pyramids, prisms and antiprisms
 * Conway operations
+* subdivision (Catmull-Clark)
 
 **/
 
@@ -51,12 +52,14 @@ class Manifold {
       Vertex end = vertices[(i+1)%vertices.length];
       Edge e = this.findEdge(start, end);
       if (e != null) {
-        e.right = f; // check that there isn't already an edge in this direction (face created wrong...)
+        e.right = f;
         //f.edges[i] = e; // Add edge to face.
       } else {
         this.addEdge(start, end, f);
         //f.edges[i] = this.addEdge(start, end, f);
       }
+      // Note: should check that there isn't already an edge in this direction
+      // (i.e. face created wrong...)
     }   
     this.faces.add(f);
     return f;
@@ -77,8 +80,12 @@ class Manifold {
   
   Edge addEdge(Edge e) {
     this.edges.add(e);
-    e.start.edges.add(e);
-    e.end.edges.add(e);
+    if (!e.start.edges.contains(e)) {
+      e.start.edges.add(e);
+    }
+    if (!e.end.edges.contains(e)) {
+      e.end.edges.add(e);
+    }
     return e;
   }
   
@@ -138,26 +145,109 @@ class Manifold {
   Manifold dual() {
     // Find the dual of the current manifold.
     Manifold d = new Manifold();
+    // vertices from faces
     for (Face f : this.faces) {
       PVector c = f.centroid();
       d.addVertex(c);
     }
+    // faces from vertices
     for (Vertex v : this.vertices) {
-      //Vertex[] fv = new Vertex[v.edges.size()];
-      List<Vertex> fv = new ArrayList<Vertex>();
-      v.sortEdges();
-      for (Edge e : v.edges) {
-        if (v == e.start) {
-          fv.add(d.vertices.get(this.faces.indexOf(e.right)));
-        } else {
-          fv.add(d.vertices.get(this.faces.indexOf(e.left)));
-        }
+      Vertex[] fv = new Vertex[v.edges.size()];
+      Face[] vf = v.getFaces();
+      for (int i = 0; i < vf.length; i++) {
+        fv[i] = d.vertices.get(this.faces.indexOf(vf[i]));
       }
-      d.addFace(fv.toArray(new Vertex[v.edges.size()])); // convert ArrayList to Array
+      d.addFace(fv);
     }
     return d;
   }
   
+  //---------------------------------------------------------//
+  //                       Subdivision                       //
+  //---------------------------------------------------------//
+
+  // Catmull-Clark
+
+  Manifold catmullClark() {
+    // subdivide the manifold following the Catmull-Clark algorithm.
+    // see http://rosettacode.org/wiki/Catmull–Clark_subdivision_surface (1)
+    // and https://graphics.stanford.edu/wikis/cs148-09-summer/Assignment3Description (2)
+    Manifold cc = new Manifold();
+
+    // for each face, a FACE POINT is created which is the average
+    // of all the points of the face.
+    Vertex[] facePoints = new Vertex[this.faces.size()];
+    for (Face f : this.faces) {
+      facePoints[this.faces.indexOf(f)] = cc.addVertex(f.centroid());
+      //facePoints[this.faces.indexOf(f)] = new Vertex(f.centroid());
+    }
+
+    // for each edge, an EDGE POINT is created which is the average
+    // between the center of the edge and the center of the segment
+    // made with the face points of the two adjacent faces.
+    Vertex[] edgePoints = new Vertex[this.edges.size()];
+    for (Edge e : this.edges) {
+      PVector edgePoint = new PVector();
+      edgePoint.add(e.left.centroid());
+      edgePoint.add(e.right.centroid());
+      edgePoint.add(e.start.position);
+      edgePoint.add(e.end.position);
+      edgePoint.div(4);
+      edgePoints[this.edges.indexOf(e)] = cc.addVertex(edgePoint);
+      //edgePoints[this.edges.indexOf(e)] = new Vertex(edgePoint);
+    }
+
+    // for each ORIGINAL point, update location based on: (-Q + 4E + (n-3)*S)/n 
+    Vertex[] origPoints = new Vertex[this.vertices.size()];
+    for (Vertex v : this.vertices) {
+      // old coordinates
+      PVector oldCoords = v.position.get();
+      // average of the face points of the faces the point belongs to
+      PVector avgFacePoints = new PVector();
+      for (Face f : v.getFaces()) {
+        avgFacePoints.add(facePoints[this.faces.indexOf(f)].position);
+      }
+      avgFacePoints.div(v.getFaces().length);
+      // average of the centers of edges the point belongs to
+      PVector avgEdgePoints = new PVector();
+      for (Edge e : v.edges) {
+        avgEdgePoints.add(edgePoints[this.edges.indexOf(e)].position);
+      }
+      avgEdgePoints.div(v.edges.size());
+      // calculate new coordinates
+      float n = v.getFaces().length; // number of faces a point belongs to
+      PVector newCoords = PVector.sub(PVector.mult(avgEdgePoints, 4), avgFacePoints);
+      newCoords.add(PVector.mult(oldCoords, (n-3)));
+      newCoords.div(n);
+      origPoints[this.vertices.indexOf(v)] = cc.addVertex(newCoords); // update
+    }
+
+    // add faces by linking up each original (moved) point with a face point and
+    // the two corresponding edge points
+    for (Face f : this.faces) {
+      for (int i = 0; i < f.vertices.length; i++) {
+        Vertex prev = f.vertices[i];
+        Vertex curr = f.vertices[(i+1)%f.vertices.length];
+        Vertex next = f.vertices[(i+2)%f.vertices.length];
+        Edge nextEdge = this.findEdge(curr, next);
+        if (nextEdge == null) {
+          nextEdge = this.findEdge(next, curr);
+        }
+        Edge prevEdge = this.findEdge(curr, prev);
+        if (prevEdge == null) {
+          prevEdge = this.findEdge(prev, curr);
+        }
+        Vertex[] subFace = new Vertex[4];
+        subFace[0] = origPoints[this.vertices.indexOf(curr)];
+        subFace[1] = edgePoints[this.edges.indexOf(nextEdge)];
+        subFace[2] = facePoints[this.faces.indexOf(f)];
+        subFace[3] = edgePoints[this.edges.indexOf(prevEdge)];
+        cc.addFace(subFace);
+      }
+    }
+    return cc;
+  }
+
   //---------------------------------------------------------//
   //                         Other...                        //
   //---------------------------------------------------------//
@@ -186,12 +276,15 @@ class Manifold {
   void debug(boolean detail) {
     println("// " + this + "\n");
     
-    println("Vertices: " + manifold.vertices().size());
+    println("Vertices: " + this.vertices().size());
     if (detail) {
+      for (Vertex v : this.vertices) {
+        println("* " + v + ":\t" + v.position);
+      }
       println();
     }
     
-    println("Edges: " + manifold.edges().size());
+    println("Edges: " + this.edges().size());
     if (detail) {
       for (Edge e : this.edges) {
         println("* " + e + ":\t" + e.left + "\t" + e.right);
@@ -199,14 +292,14 @@ class Manifold {
       println();
     }
     
-    println("Faces: " + manifold.faces().size());
+    println("Faces: " + this.faces().size());
     if (detail) {
       for (Face f : this.faces) {
-        //print("* " + f + ":");
+        print("* " + f + ":");
         //for (Edge fe : f.edges) {
         //  print("\t" + fe);
         //}
-        //println();
+        println();
       }
     }
     

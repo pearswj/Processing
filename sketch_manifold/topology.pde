@@ -57,6 +57,21 @@ class Vertex {
       this.edges = sorted;
     }
   }
+
+  Face[] getFaces() {
+    // returns an array of faces to which this vertex belongs (ordered anticlockwise)
+    Face[] faces = new Face[this.edges.size()];
+    this.sortEdges();
+    for (int i = 0; i < this.edges.size(); i++) {
+      Edge e = this.edges.get(i);
+      if (this == e.start) {
+        faces[i] = e.right;
+      } else {
+        faces[i] = e.left;
+      }
+    }
+    return faces;
+  }
 }
 
 /////////////////////////////////////////////////////////////
@@ -98,15 +113,29 @@ class Face {
     //this.edges = new Edge[vertices.length];
   }
   
-  void draw(boolean normals) {
-    // TODO: draw faces by finding centroid and construction a 'fan'  
+  void draw(boolean normals) { 
     noStroke();
     fill(204, 102, 0);
-    beginShape();
-    for (Vertex v : this.vertices) {
-      vertex(v.position.x, v.position.y, v.position.z);
+    if (this.vertices.length <= 3) {
+      // draw face normally for triangles
+      beginShape();
+      for (Vertex v : this.vertices) {
+        vertex(v.position.x, v.position.y, v.position.z);
+      }
+      endShape(CLOSE);
+    } else {
+      // draw 'fan' around centroid of face
+      PVector c = this.centroid();
+      for (int i = 0; i < this.vertices.length; i++) {
+        PVector a = this.vertices[i].position;
+        PVector b = this.vertices[(i+1)%this.vertices.length].position;
+        beginShape();
+        vertex(a.x, a.y, a.z);
+        vertex(b.x, b.y, b.z);
+        vertex(c.x, c.y, c.z);
+        endShape(CLOSE);
+      }
     }
-    endShape(CLOSE);
     if (normals) {
       // draw normals
       PVector a = this.centroid();
