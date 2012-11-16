@@ -50,7 +50,7 @@ class Manifold {
     for (int i = 0; i < vertices.length; i++) {
       Vertex start = vertices[i];
       Vertex end = vertices[(i+1)%vertices.length];
-      Edge e = this.findEdge(start, end);
+      Edge e = this.findEdge(end, start); // find an edge that exists in the opposite direction
       if (e != null) {
         e.right = f;
         //f.edges[i] = e; // Add edge to face.
@@ -179,7 +179,6 @@ class Manifold {
     Vertex[] facePoints = new Vertex[this.faces.size()];
     for (Face f : this.faces) {
       facePoints[this.faces.indexOf(f)] = cc.addVertex(f.centroid());
-      //facePoints[this.faces.indexOf(f)] = new Vertex(f.centroid());
     }
 
     // for each edge, an EDGE POINT is created which is the average
@@ -194,10 +193,9 @@ class Manifold {
       edgePoint.add(e.end.position);
       edgePoint.div(4);
       edgePoints[this.edges.indexOf(e)] = cc.addVertex(edgePoint);
-      //edgePoints[this.edges.indexOf(e)] = new Vertex(edgePoint);
     }
 
-    // for each ORIGINAL point, update location based on: (-Q + 4E + (n-3)*S)/n 
+    // for each ORIGINAL POINT, update location based on: (-Q + 4E + (n-3)*S)/n 
     Vertex[] origPoints = new Vertex[this.vertices.size()];
     for (Vertex v : this.vertices) {
       // old coordinates
@@ -229,14 +227,8 @@ class Manifold {
         Vertex prev = f.vertices[i];
         Vertex curr = f.vertices[(i+1)%f.vertices.length];
         Vertex next = f.vertices[(i+2)%f.vertices.length];
-        Edge nextEdge = this.findEdge(curr, next);
-        if (nextEdge == null) {
-          nextEdge = this.findEdge(next, curr);
-        }
-        Edge prevEdge = this.findEdge(curr, prev);
-        if (prevEdge == null) {
-          prevEdge = this.findEdge(prev, curr);
-        }
+        Edge nextEdge = this.findEdge(curr, next, false);
+        Edge prevEdge = this.findEdge(curr, prev, false);
         Vertex[] subFace = new Vertex[4];
         subFace[0] = origPoints[this.vertices.indexOf(curr)];
         subFace[1] = edgePoints[this.edges.indexOf(nextEdge)];
@@ -247,20 +239,96 @@ class Manifold {
     }
     return cc;
   }
+  
+  // Loop
+  
+  Manifold loop() {
+    // http://www.cs.cmu.edu/afs/cs/academic/class/15462-s12/www/lec_slides/lec07.pdf (1)
+    // http://graphics.stanford.edu/~mdfisher/subdivision.html (2)
+    // apply to triangular based meshes ONLY. 
+    Manifold l = new Manifold();
+    
+    // for each edge, an EDGE POINT is created
+    Vertex[] edgePoints = new Vertex[this.edges.size()];
+    for (Edge e : this.edges) {
+      PVector edgePoint = new PVector();
+      for (Vertex v : e.left.vertices) {
+        if (v != e.start && v != e.end) {
+          edgePoint.add(PVector.mult(v.position, 0.125));
+          break;
+        }
+      }
+      for (Vertex v : e.right.vertices) {
+        if (v != e.start && v != e.end) {
+          edgePoint.add(PVector.mult(v.position, 0.125));
+          break;
+        }
+      }
+      edgePoint.add(PVector.mult(e.start.position, 0.375));
+      edgePoint.add(PVector.mult(e.end.position, 0.375));
+      
+      edgePoints[this.edges.indexOf(e)] = l.addVertex(edgePoint);
+    }
+    
+    // for each ORIGINAL POINT, create a new point
+    Vertex[] origPoints = new Vertex[this.vertices.size()];
+    for (Vertex v : this.vertices) {
+      float n = v.getFaces().length;
+//      float beta; // (2)
+//      if ( n > 3) {
+//        beta = 3 / (8 * n);
+//      } else {
+//       beta = 0.1875;
+//      }
+      float beta = (1/n) * (0.625 - sq(0.375 + 0.25 * cos(2 * PI / n))); // Loop's original algorithm (1)
+      println(beta);
+      PVector origPoint = PVector.mult(v.position, 1 - n * beta);
+      for (Face f : v.getFaces()) {
+        origPoint.add(PVector.mult(f.vertices[(Arrays.asList(f.vertices).indexOf(v) + 1) % f.vertices.length].position, beta));
+      }
+      origPoints[this.vertices.indexOf(v)] = l.addVertex(origPoint);
+    }
+    
+    // draw faces
+    for (Face f : this.faces) {
+      for (Vertex v : f.vertices) { // this part ONLY works with triangular original meshes
+        Vertex[] newf = new Vertex[3];
+        newf[0] = origPoints[this.vertices.indexOf(v)];
+        // TODO: break the next two lines down and handle error when a subdivision of a n>3 face has been attempted 
+        newf[1] = edgePoints[this.edges.indexOf(this.findEdge(v, f.vertices[(Arrays.asList(f.vertices).indexOf(v) + 1) % f.vertices.length], false))];
+        newf[2] = edgePoints[this.edges.indexOf(this.findEdge(v, f.vertices[(Arrays.asList(f.vertices).indexOf(v) + 2) % f.vertices.length], false))];
+        l.addFace(newf);
+      }
+      Vertex[] newf = new Vertex[f.vertices.length];
+      for (int i = 0; i < f.vertices.length; i++) {
+        newf[i] = edgePoints[this.edges.indexOf(this.findEdge(f.vertices[i], f.vertices[(i+1)%f.vertices.length], false))];
+      }
+      l.addFace(newf);
+    }
+    
+    return l;
+  }
+    
 
   //---------------------------------------------------------//
   //                         Other...                        //
   //---------------------------------------------------------//
   
-  Edge findEdge(Vertex start, Vertex end) {
+  Edge findEdge(Vertex start, Vertex end, boolean direction) {
     // If an edge exists from 'start' to 'end', return it (else return null).
-    // Note: direction specific!
+    // TODO: consider moving into Vertex class? (search through Vertex::edges)
     for (Edge e : this.edges) {
-      if (e.start == end && e.end == start) {
+      if (e.start == start && e.end == end) {
+        return e;
+      } else if (direction == false && e.start == end && e.end == start) {
         return e;
       }
     }
     return null;
+  }
+  
+  Edge findEdge(Vertex start, Vertex end) {
+    return this.findEdge(start, end, true);
   }
   
   void toSphere() {

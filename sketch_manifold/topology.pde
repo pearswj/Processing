@@ -139,7 +139,7 @@ class Face {
     if (normals) {
       // draw normals
       PVector a = this.centroid();
-      PVector b = PVector.add(this.centroid(), PVector.mult(this.normal(), 0.5));
+      PVector b = PVector.add(this.centroid(), PVector.mult(this.normal(), 0.1));
       strokeWeight(1);
       stroke(0);
       line(a.x, a.y, a.z, b.x, b.y, b.z);

@@ -5,9 +5,9 @@ Will Pearson, University of Bath, November 2012.
 
 **/
 
-//import peasy.*;
-//PeasyCam cam;
-float rot = 0; // To hold the cumulative rotation.
+import peasy.*;
+PeasyCam cam;
+//float rot = 0; // To hold the cumulative rotation.
 
 Manifold manifold, test;
 
@@ -15,7 +15,7 @@ void setup() {
   size(700, 700, OPENGL);
   smooth(4);
   
-  //cam = new PeasyCam(this, 100);
+  cam = new PeasyCam(this, 400);
   
   // Manually create tetrahedron for testing puposes.
   Factory factory = new Factory(); 
@@ -25,7 +25,8 @@ void setup() {
   //manifold = factory.antiprism(8);
 
   manifold.toSphere();
-  test = manifold.catmullClark().catmullClark().catmullClark();
+  //test = manifold.catmullClark().catmullClark().catmullClark();
+  test = manifold.loop().loop().loop();
   
   manifold.debug(true);
   test.debug(true);
@@ -33,11 +34,11 @@ void setup() {
 
 void draw() {
   // Center and rotate.
-  translate(width/2, height/2);
+  //translate(width/2, height/2);
   scale(150);
-  rotateX(radians(rot));
-  rotateY(radians(rot));
-  rot++;
+  //rotateX(radians(rot));
+  //rotateY(radians(rot));
+  //rot++;
   
   // Misc.
   background(255);
