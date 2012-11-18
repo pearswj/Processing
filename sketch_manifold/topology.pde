@@ -1,5 +1,5 @@
 /*
- 
+
  Topological classes.
  Will Pearson, University of Bath, November 2012.
  
@@ -73,6 +73,25 @@ class Vertex {
       }
     }
     return faces;
+  }
+  
+  Edge edgeTo(Vertex b) {
+    // Find edge starting at this and ending at b (directional)
+    for (Edge e : this.edges) {
+      if (e.start == this && e.end == b) {
+        return e;
+      }
+    }
+    return null;
+  }
+  
+  Edge edgeWith(Vertex b) {
+    // Find edge starting/ending at this and ending/starting at b (non-directional)
+    if (this.edgeTo(b) != null) {
+      return this.edgeTo(b);
+    } else {
+      return b.edgeTo(this);
+    }
   }
 }
 
