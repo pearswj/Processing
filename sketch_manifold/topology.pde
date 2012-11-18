@@ -1,13 +1,13 @@
-/**
-
-Topological classes.
-Will Pearson, University of Bath, November 2012.
-
-* Vertex class
-* Edge class
-* Face class
-
-**/
+/*
+ 
+ Topological classes.
+ Will Pearson, University of Bath, November 2012.
+ 
+ * Vertex class
+ * Edge class
+ * Face class
+ 
+ */
 
 /////////////////////////////////////////////////////////////
 //                      Vertex Class                       //
@@ -31,7 +31,7 @@ class Vertex {
     sphere(0.02);
     popMatrix();
   }
-  
+
   void sortEdges() {
     if (!this.edges.isEmpty()) {
       List<Edge> sorted = new ArrayList<Edge>();
@@ -42,7 +42,8 @@ class Vertex {
         Edge e = sorted.get(i); // Last edge in sorted list.
         if (this == e.start) {
           f = e.left;
-        } else {
+        } 
+        else {
           f = e.right;
         }
         // Find the next edge (the one with face f on one side).
@@ -66,7 +67,8 @@ class Vertex {
       Edge e = this.edges.get(i);
       if (this == e.start) {
         faces[i] = e.right;
-      } else {
+      } 
+      else {
         faces[i] = e.left;
       }
     }
@@ -104,15 +106,15 @@ class Edge {
 /////////////////////////////////////////////////////////////
 
 class Face {
-  
+
   Vertex[] vertices;
   //Edge[] edges;
-  
+
   Face(Vertex[] vertices) {
     this.vertices = vertices;
     //this.edges = new Edge[vertices.length];
   }
-  
+
   void draw(boolean normals) { 
     noStroke();
     fill(204, 102, 0);
@@ -123,7 +125,8 @@ class Face {
         vertex(v.position.x, v.position.y, v.position.z);
       }
       endShape(CLOSE);
-    } else {
+    } 
+    else {
       // draw 'fan' around centroid of face
       PVector c = this.centroid();
       for (int i = 0; i < this.vertices.length; i++) {
@@ -145,11 +148,11 @@ class Face {
       line(a.x, a.y, a.z, b.x, b.y, b.z);
     }
   }
-  
+
   void draw() {
     this.draw(false);
   }
-  
+
   PVector centroid() {
     PVector c = new PVector(0, 0, 0);
     for (Vertex v : this.vertices) {
@@ -158,7 +161,7 @@ class Face {
     c.div(this.vertices.length);
     return c;
   }
-  
+
   PVector normal() {
     PVector n = new PVector();
     for (int i=0; i<this.vertices.length; i++) {
@@ -168,3 +171,4 @@ class Face {
     return n;
   }
 }
+

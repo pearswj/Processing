@@ -1,9 +1,9 @@
 /**
-
-Manifold and Conway Operations
-Will Pearson, University of Bath, November 2012.
-
-**/
+ 
+ Manifold and Conway Operations
+ Will Pearson, University of Bath, November 2012.
+ 
+ */
 
 import peasy.*;
 PeasyCam cam;
@@ -14,12 +14,12 @@ Manifold manifold, test;
 void setup() {
   size(700, 700, OPENGL);
   smooth(4);
-  
+
   cam = new PeasyCam(this, 400);
-  
+
   // Manually create tetrahedron for testing puposes.
   Factory factory = new Factory(); 
-  
+
   manifold = factory.pyramid(3, 1, true);
   //manifold = factory.prism(5, 1);
   //manifold = factory.antiprism(8);
@@ -27,7 +27,7 @@ void setup() {
   manifold.toSphere();
   //test = manifold.catmullClark().catmullClark().catmullClark();
   test = manifold.loop().loop().loop();
-  
+
   manifold.debug(true);
   test.debug(true);
 }
@@ -39,11 +39,11 @@ void draw() {
   //rotateX(radians(rot));
   //rotateY(radians(rot));
   //rot++;
-  
+
   // Misc.
   background(255);
   lights();
-  
+
   // Draw manifolds.
   manifold.drawEdges();
   //manifold.drawFaces(true);
@@ -51,3 +51,4 @@ void draw() {
   //test.drawEdges();
   //test.drawVertices();
 }
+

@@ -1,47 +1,47 @@
-/**
-
-Manifold class.
-Will Pearson, University of Bath, November 2012.
-
-* pyramids, prisms and antiprisms
-* Conway operations
-* subdivision (Catmull-Clark)
-
-**/
+/*
+ 
+ Manifold class.
+ Will Pearson, University of Bath, November 2012.
+ 
+ * pyramids, prisms and antiprisms
+ * Conway operations (dual)
+ * subdivision (Catmull-Clark, Loop)
+ 
+ */
 
 /////////////////////////////////////////////////////////////
 //                     Manifold Class                      //
 /////////////////////////////////////////////////////////////
 
 class Manifold {
-  
+
   private List<Vertex> vertices;
   private List<Edge> edges;
   private List<Face> faces;
-  
+
   Manifold() {
     this.vertices = new ArrayList<Vertex>(); 
     this.edges = new ArrayList<Edge>();
     this.faces = new ArrayList<Face>();
   }
-  
+
   //---------------------------------------------------------//
   //              Add vertices, faces and edges              //
   //---------------------------------------------------------//
-  
+
   // Add a new vertex:
-  
+
   Vertex addVertex(Vertex v) {
     this.vertices.add(v);
     return v;
   }
-  
+
   Vertex addVertex(PVector position) {
     return this.addVertex(new Vertex(position));
   }
-  
+
   // Add a new face:
-  
+
   Face addFace(Vertex[] vertices) {
     // Add a new face, described by its vertices.
     // Vertices must be supplied in anticlockwise order.
@@ -54,7 +54,8 @@ class Manifold {
       if (e != null) {
         e.right = f;
         //f.edges[i] = e; // Add edge to face.
-      } else {
+      } 
+      else {
         this.addEdge(start, end, f);
         //f.edges[i] = this.addEdge(start, end, f);
       }
@@ -64,7 +65,7 @@ class Manifold {
     this.faces.add(f);
     return f;
   }
-  
+
   Face addFace(int[] vIndex) {
     // Add a new face, described by vertex indices
     // TODO: catch 'index out of bounds' errors
@@ -74,10 +75,10 @@ class Manifold {
     }
     return this.addFace(vertices);
   }
-      
-  
+
+
   // Add a new edge:
-  
+
   Edge addEdge(Edge e) {
     this.edges.add(e);
     if (!e.start.edges.contains(e)) {
@@ -88,11 +89,11 @@ class Manifold {
     }
     return e;
   }
-  
+
   Edge addEdge(Vertex start, Vertex end, Face left) {
     return this.addEdge(new Edge(start, end, left));
   }
-  
+
   //---------------------------------------------------------//
   //                      Draw Methods                       //
   //---------------------------------------------------------//
@@ -103,45 +104,45 @@ class Manifold {
       v.draw();
     }
   }
-  
+
   void drawEdges() {
     for (Edge e : this.edges) {
       e.draw();
     }
   }
-  
+
   void drawFaces(boolean normals) {
     for (Face f : this.faces) {
       f.draw(normals);
     }
   }
-    
+
   void drawFaces() {
     this.drawFaces(false);
   }
-  
+
   //---------------------------------------------------------//
   //                    Accessor Methods                     //
   //---------------------------------------------------------//
-  
+
   List<Vertex> vertices() {
     return this.vertices;
   }
-  
+
   List<Edge> edges() {
     return this.edges;
   }
-  
+
   List<Face> faces() {
     return this.faces;
   }
-  
+
   //---------------------------------------------------------//
   //                    Conway Operations                    //
   //---------------------------------------------------------//
-  
+
   // Dual
-  
+
   Manifold dual() {
     // Find the dual of the current manifold.
     Manifold d = new Manifold();
@@ -161,7 +162,7 @@ class Manifold {
     }
     return d;
   }
-  
+
   //---------------------------------------------------------//
   //                       Subdivision                       //
   //---------------------------------------------------------//
@@ -239,15 +240,15 @@ class Manifold {
     }
     return cc;
   }
-  
+
   // Loop
-  
+
   Manifold loop() {
     // http://www.cs.cmu.edu/afs/cs/academic/class/15462-s12/www/lec_slides/lec07.pdf (1)
     // http://graphics.stanford.edu/~mdfisher/subdivision.html (2)
     // apply to triangular based meshes ONLY. 
     Manifold l = new Manifold();
-    
+
     // for each edge, an EDGE POINT is created
     Vertex[] edgePoints = new Vertex[this.edges.size()];
     for (Edge e : this.edges) {
@@ -266,20 +267,21 @@ class Manifold {
       }
       edgePoint.add(PVector.mult(e.start.position, 0.375));
       edgePoint.add(PVector.mult(e.end.position, 0.375));
-      
+
       edgePoints[this.edges.indexOf(e)] = l.addVertex(edgePoint);
     }
-    
+
     // for each ORIGINAL POINT, create a new point
     Vertex[] origPoints = new Vertex[this.vertices.size()];
     for (Vertex v : this.vertices) {
       float n = v.getFaces().length;
-//      float beta; // (2)
-//      if ( n > 3) {
-//        beta = 3 / (8 * n);
-//      } else {
-//       beta = 0.1875;
-//      }
+      // float beta; // (2)
+      // if ( n > 3) {
+      //   beta = 3 / (8 * n);
+      // }
+      // else {
+      //   beta = 0.1875;
+      // }
       float beta = (1/n) * (0.625 - sq(0.375 + 0.25 * cos(2 * PI / n))); // Loop's original algorithm (1)
       println(beta);
       PVector origPoint = PVector.mult(v.position, 1 - n * beta);
@@ -288,7 +290,7 @@ class Manifold {
       }
       origPoints[this.vertices.indexOf(v)] = l.addVertex(origPoint);
     }
-    
+
     // draw faces
     for (Face f : this.faces) {
       for (Vertex v : f.vertices) { // this part ONLY works with triangular original meshes
@@ -305,32 +307,33 @@ class Manifold {
       }
       l.addFace(newf);
     }
-    
+
     return l;
   }
-    
+
 
   //---------------------------------------------------------//
   //                         Other...                        //
   //---------------------------------------------------------//
-  
+
   Edge findEdge(Vertex start, Vertex end, boolean direction) {
     // If an edge exists from 'start' to 'end', return it (else return null).
     // TODO: consider moving into Vertex class? (search through Vertex::edges)
     for (Edge e : this.edges) {
       if (e.start == start && e.end == end) {
         return e;
-      } else if (direction == false && e.start == end && e.end == start) {
+      } 
+      else if (direction == false && e.start == end && e.end == start) {
         return e;
       }
     }
     return null;
   }
-  
+
   Edge findEdge(Vertex start, Vertex end) {
     return this.findEdge(start, end, true);
   }
-  
+
   void toSphere() {
     // Project vertices onto a unit sphere.
     // Note: assumes that the centroid of the manifold is at the origin.
@@ -338,12 +341,12 @@ class Manifold {
       v.position.setMag(1);
     }
   }
-  
+
   // Debug...
-  
+
   void debug(boolean detail) {
     println("// " + this + "\n");
-    
+
     println("Vertices: " + this.vertices().size());
     if (detail) {
       for (Vertex v : this.vertices) {
@@ -351,7 +354,7 @@ class Manifold {
       }
       println();
     }
-    
+
     println("Edges: " + this.edges().size());
     if (detail) {
       for (Edge e : this.edges) {
@@ -359,7 +362,7 @@ class Manifold {
       }
       println();
     }
-    
+
     println("Faces: " + this.faces().size());
     if (detail) {
       for (Face f : this.faces) {
@@ -370,7 +373,7 @@ class Manifold {
         println();
       }
     }
-    
+
     println();
   }
 }
