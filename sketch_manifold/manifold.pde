@@ -376,9 +376,9 @@ class Manifold {
   //                         Export                          //
   //---------------------------------------------------------//
   
-  // Obj (http://en.wikipedia.org/wiki/Wavefront_.obj_file)
+  // OBJ (http://en.wikipedia.org/wiki/Wavefront_.obj_file)
   
-  void exportObj() {
+  void exportOBJ() {
     PrintWriter obj = createWriter("export.obj");
     // vertices: "v x y z w"
     for (Vertex v : this.vertices) {
@@ -394,6 +394,30 @@ class Manifold {
     }
     obj.flush();
     obj.close();
+  }
+  
+  // VRML (Indexed Face Sets: http://cs.iupui.edu/~aharris/mm/vrml4/vrml4.html)
+  
+  void exportVRML() {
+    PrintWriter vrml = createWriter("export.wrl");
+    vrml.println("#VRML V2.0 utf8");
+    vrml.println("Shape {");
+    vrml.println("  geometry IndexedFaceSet {\n    coord Coordinate {");
+    vrml.println("      point [");
+    for (Vertex v : this.vertices) {
+      vrml.println("        " + v.position.x + " " + v.position.y + " " + v.position.z + ",");
+    }
+    vrml.println("    }\n    coordIndex [");
+    for (Face f : this.faces) {
+      vrml.print("      ");
+      for (int i = 0; i < f.vertices.length; i++) {
+        vrml.print(this.vertices.indexOf(f.vertices[i]) + ",");
+      }
+      vrml.println("-1,"); // end face
+    }
+    vrml.println("    ]\n  }\n}");
+    vrml.flush();
+    vrml.close();
   }
 }
 

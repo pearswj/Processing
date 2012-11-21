@@ -30,7 +30,7 @@ void setup() {
 
   manifold.debug(true);
   test.debug(true);
-  test.exportObj();
+  test.exportVRML();
 }
 
 void draw() {
