@@ -371,5 +371,29 @@ class Manifold {
 
     println();
   }
+  
+  //---------------------------------------------------------//
+  //                         Export                          //
+  //---------------------------------------------------------//
+  
+  // Obj (http://en.wikipedia.org/wiki/Wavefront_.obj_file)
+  
+  void exportObj() {
+    PrintWriter obj = createWriter("export.obj");
+    // vertices: "v x y z w"
+    for (Vertex v : this.vertices) {
+      obj.println("v " + v.position.x + " " + v.position.y + " " + v.position.z + " 1.0");
+    }
+    // faces: "f v1 v2 v3 ..."
+    for (Face f : this.faces) {
+      obj.print("f");
+      for (Vertex fv : f.vertices) {
+        obj.print(" " + (this.vertices.indexOf(fv)+1)); // vertices numbered from 1 (not 0)
+      }
+      obj.println();
+    }
+    obj.flush();
+    obj.close();
+  }
 }
 

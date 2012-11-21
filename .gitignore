@@ -5,3 +5,4 @@ application.*
 sketch.properties
 *.diff
 libraries/*
+*.obj

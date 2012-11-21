@@ -30,6 +30,7 @@ void setup() {
 
   manifold.debug(true);
   test.debug(true);
+  test.exportObj();
 }
 
 void draw() {
