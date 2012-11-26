@@ -4,6 +4,10 @@ web-export
 application.*
 sketch.properties
 *.diff
-libraries/*
+libraries
 *.obj
 *.wrl
+.metadata
+generated
+.project
+.classpath

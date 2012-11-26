@@ -6,40 +6,75 @@
  */
 
 import peasy.*;
-PeasyCam cam;
-//float rot = 0; // To hold the cumulative rotation.
+import controlP5.*;
 
-Manifold manifold, test;
+PeasyCam cam;
+ControlP5 cp5;
+Controller primitive;
+
+Manifold manifold;
 
 void setup() {
   size(700, 700, OPENGL);
   smooth(4);
 
-  cam = new PeasyCam(this, 400);
+  cam = new PeasyCam(this, 600);
 
-  // Manually create tetrahedron for testing puposes.
-  Factory factory = new Factory(); 
+  //---------------------------------------------------------//
+  //                        ControlP5                        //
+  //---------------------------------------------------------//
 
-  manifold = factory.pyramid(3, 1, true);
-  //manifold = factory.prism(5, 1);
-  //manifold = factory.antiprism(8);
+  cp5 = new ControlP5(this);
+  cp5.setAutoDraw(false);
+  cp5.setBroadcast(false);
+  
+  primitive = cp5.addButton("pyramid") // default
+     .setValue(3)
+     .setPosition(50,50)
+     .setSize(100,20)
+     .setId(0)
+     ;
+  cp5.addButton("prism")
+     .setValue(3)
+     .setPosition(50,70)
+     .setSize(100,20)
+     .setId(1)
+     ;
+  cp5.addButton("antiprism")
+     .setValue(3)
+     .setPosition(50,90)
+     .setSize(100,20)
+     .setId(2)
+     ;
 
-  manifold.toSphere();
-  //test = manifold.catmullClark().catmullClark().catmullClark();
-  test = manifold.loop().loop().loop();
+  Slider s = cp5.addSlider("numSides")
+                .setPosition(50, 130)
+                .setSize(100,20)
+                .setRange(3, 25)
+                .setId(3)
+                ;
+  
+  //l.plugTo(factory);
+  cp5.setBroadcast(true);
+                
+  gui(); // desturate...
+  s.setValue(3); // with primitive set to "pyramid", draw a tetrahedron to kick things off...
 
-  manifold.debug(true);
-  test.debug(true);
-  test.exportVRML();
+  //---------------------------------------------------------//
+
+  // TODO: Implement these methods in ControlP5
+  
+  //manifold.toSphere();
+  //test = manifold.catmullClark();
+  //test = manifold.loop();
+
+  //manifold.debug(false);
+  //manifold.exportOBJ();
+  //test.exportVRML();
 }
 
 void draw() {
-  // Center and rotate.
-  //translate(width/2, height/2);
   scale(150);
-  //rotateX(radians(rot));
-  //rotateY(radians(rot));
-  //rot++;
 
   // Misc.
   background(255);
@@ -47,9 +82,47 @@ void draw() {
 
   // Draw manifolds.
   manifold.drawEdges();
-  //manifold.drawFaces(true);
-  test.drawFaces(false);
+  manifold.drawFaces(false);
+  //test.drawFaces(false);
   //test.drawEdges();
-  //test.drawVertices();
+  //test.drawVertices(true);
+
+  noLights();
+  gui();
+}
+
+void gui() {
+  // http://www.sojamo.de/libraries/controlP5/examples/extra/ControlP5withPeasyCam/ControlP5withPeasyCam.pde
+  hint(DISABLE_DEPTH_TEST);
+  cam.beginHUD();
+  cp5.draw();
+  cam.endHUD();
+  hint(ENABLE_DEPTH_TEST);
+}
+
+void  numSides(int n) {
+  primitive.setValue(n);
+  //primitive.update();
+}
+
+void controlEvent(ControlEvent theEvent) {
+  //println(theEvent.controller().name()+" = "+theEvent.value());
+  int n = (int)cp5.getController("numSides").getValue();
+  int id = theEvent.controller().getId();
+  Factory factory = new Factory();
+  switch(id) {
+    case(0):
+    manifold = factory.pyramid(n, 1, true);
+    break;
+    case(1):
+    manifold = factory.prism(n, 1);
+    break;
+    case(2):
+    manifold = factory.antiprism(n, 1);
+    break;
+  }
+  if (id == 0 || id == 1 || id == 2) {
+    primitive = theEvent.controller();
+  }
 }
 
