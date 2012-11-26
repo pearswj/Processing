@@ -23,13 +23,25 @@ class Vertex {
     this.edges = new ArrayList<Edge>();
   }
 
-  void draw() {
+  void draw(boolean normals) {
     noStroke();
     fill(0);
     pushMatrix();
     translate(this.position.x, this.position.y, this.position.z);
     sphere(0.02);
     popMatrix();
+    if (normals) {
+      // draw normals
+      PVector a = this.position;
+      PVector b = PVector.add(this.position, PVector.mult(this.normal(), 0.1));
+      strokeWeight(1);
+      stroke(0);
+      line(a.x, a.y, a.z, b.x, b.y, b.z);
+    }
+  }
+  
+  void draw() {
+    this.draw(false);
   }
 
   void sortEdges() {
@@ -93,6 +105,14 @@ class Vertex {
       return b.edgeTo(this);
     }
   }
+  
+  PVector normal() {
+    PVector n = new PVector();
+    for (Face f : this.getFaces()) {
+      n.add(f.normal());
+    }
+    return n.normalize(null);
+  }
 }
 
 /////////////////////////////////////////////////////////////
@@ -116,7 +136,12 @@ class Edge {
   void draw() {
     stroke(0);
     strokeWeight(2);
-    line(this.start.position.x, this.start.position.y, this.start.position.z, this.end.position.x, this.end.position.y, this.end.position.z);
+    line(this.start.position.x, this.start.position.y, this.start.position.z,
+         this.end.position.x, this.end.position.y, this.end.position.z);
+  }
+  
+  float length() {
+    return start.position.dist(end.position);
   }
 }
 
@@ -186,8 +211,18 @@ class Face {
     for (int i=0; i<this.vertices.length; i++) {
       n.add(this.vertices[i].position.cross(this.vertices[(i+1)%this.vertices.length].position));
     }
-    n.normalize();
-    return n;
+    return n.normalize(null);
+  }
+  
+  float area() {
+    // planar polygon
+    float A = 0.;
+    for (int i = 0; i < this.vertices.length - 1; i++) {
+      A += (this.vertices[i].position.x * this.vertices[i+1].position.y) -
+           (this.vertices[i+1].position.x * this.vertices[i].position.y);
+    }
+    //A *= 0.5;
+    return abs(A * 0.5);
   }
 }
 

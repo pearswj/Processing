@@ -110,11 +110,15 @@ class Manifold {
   //                      Draw Methods                       //
   //---------------------------------------------------------//
 
-  void drawVertices() {
+  void drawVertices(boolean normals) {
     // Draw nodes:
     for (Vertex v : this.vertices) {
-      v.draw();
+      v.draw(normals);
     }
+  }
+  
+  void drawVertices() {
+    this.drawVertices(false);
   }
 
   void drawEdges() {
@@ -296,7 +300,7 @@ class Manifold {
       //   beta = 0.1875;
       // }
       float beta = (1/n) * (0.625 - sq(0.375 + 0.25 * cos(2 * PI / n))); // Loop's original algorithm (1)
-      println(beta);
+      //println(beta);
       PVector origPoint = PVector.mult(v.position, 1 - n * beta);
       for (Face f : v.getFaces()) {
         origPoint.add(PVector.mult(f.vertices[(Arrays.asList(f.vertices).indexOf(v) + 1) % f.vertices.length].position, beta));
@@ -384,11 +388,15 @@ class Manifold {
     for (Vertex v : this.vertices) {
       obj.println("v " + v.position.x + " " + v.position.y + " " + v.position.z + " 1.0");
     }
+    // vertex normals: "vn x y z w"
+    for (Vertex v : this.vertices) {
+      obj.println("vn " + v.normal().x + " " + v.normal().y + " " + v.normal().z);
+    }
     // faces: "f v1 v2 v3 ..."
     for (Face f : this.faces) {
       obj.print("f");
       for (Vertex fv : f.vertices) {
-        obj.print(" " + (this.vertices.indexOf(fv)+1)); // vertices numbered from 1 (not 0)
+        obj.print(" " + (this.vertices.indexOf(fv)+1) + "//" + (this.vertices.indexOf(fv)+1)); // vertices numbered from 1 (not 0)
       }
       obj.println();
     }
