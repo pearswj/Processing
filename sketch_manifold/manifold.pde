@@ -176,6 +176,9 @@ class Manifold {
       }
       d.addFace(fv);
     }
+    this.vertices = d.vertices;
+    this.edges = d.edges;
+    this.faces = d.faces;
     return d;
   }
 
@@ -255,6 +258,9 @@ class Manifold {
         cc.addFace(subFace);
       }
     }
+    this.vertices = cc.vertices;
+    this.edges = cc.edges;
+    this.faces = cc.faces;
     return cc;
   }
 
@@ -324,7 +330,9 @@ class Manifold {
       }
       l.addFace(newf);
     }
-
+    this.vertices = l.vertices;
+    this.edges = l.edges;
+    this.faces = l.faces;
     return l;
   }
 
