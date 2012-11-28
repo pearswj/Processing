@@ -131,9 +131,20 @@ class Vertex {
   }
   
   PVector normal() {
+    // sort edges --> .cross adjacent (normalised) pairs --> sum and normalise
+    this.sortEdges();
     PVector n = new PVector();
-    for (Face f : this.getFaces()) {
-      n.add(f.normal());
+    for (int i = 0; i < this.edges.size(); i++) {
+      PVector a = this.edges.get(i).vector().normalize(null);
+      PVector b = this.edges.get((i+1)%this.edges.size()).vector().normalize(null);
+      // vectors must start at 'this' vertex 
+      if (this.edges.get(i).end == this) {
+        a.mult(-1);
+      }
+      if (this.edges.get((i+1)%this.edges.size()).end == this) {
+        b.mult(-1);
+      }
+      n.add(a.cross(b));
     }
     return n.normalize(null);
   }
@@ -167,6 +178,10 @@ class Edge {
   
   float length() {
     return start.position.dist(end.position);
+  }
+  
+  PVector vector() {
+    return PVector.sub(end.position, start.position);
   }
 }
 
