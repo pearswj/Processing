@@ -45,25 +45,49 @@ class Vertex {
   }
 
   void sortEdges() {
+    // TODO: test for boundaries
     if (!this.edges.isEmpty()) {
       List<Edge> sorted = new ArrayList<Edge>();
       sorted.add(this.edges.remove(0));
       int n = this.edges.size(); // Store this somewhere safe...
+      boolean rs = false;
       for (int i = 0; i < n; i++) {
         Face f;
-        Edge e = sorted.get(i); // Last edge in sorted list.
-        if (this == e.start) {
-          f = e.left;
-        } 
-        else {
-          f = e.right;
+        if (rs == false) {
+          Edge e = sorted.get(i); // Last edge in sorted list.
+          if (this == e.start) {
+            f = e.left;
+          } 
+          else {
+            f = e.right;
+          }
+          if (f == null) { // Go back to first edge and reverse sort
+            rs = true;
+          }
+          // Find the next edge (the one with face f on one side).
+          for (Edge en: this.edges) {
+            if (f == en.left || f == en.right) {
+              sorted.add(en);
+              this.edges.remove(en);
+              break;
+            }
+          }
         }
-        // Find the next edge (the one with face f on one side).
-        for (Edge en: this.edges) {
-          if (f == en.left || f == en.right) {
-            sorted.add(en);
-            this.edges.remove(en);
-            break;
+        else {
+          Edge e = sorted.get(0); // First edge in sorted list.
+          if (this == e.start) {
+            f = e.right;
+          } 
+          else {
+            f = e.left;
+          }
+          // Find the next edge (the one with face f on one side).
+          for (Edge en: this.edges) {
+            if (f == en.left || f == en.right) {
+              sorted.add(0, en);
+              this.edges.remove(en);
+              break;
+            }
           }
         }
       }
@@ -134,7 +158,8 @@ class Edge {
   }
 
   void draw() {
-    stroke(0);
+    // TODO: differentiate boundaries
+    stroke(0); // TODO: set colour here
     strokeWeight(2);
     line(this.start.position.x, this.start.position.y, this.start.position.z,
          this.end.position.x, this.end.position.y, this.end.position.z);
