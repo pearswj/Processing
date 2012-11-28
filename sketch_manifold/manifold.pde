@@ -299,13 +299,14 @@ class Manifold {
     Vertex[] origPoints = new Vertex[this.vertices.size()];
     for (Vertex v : this.vertices) {
       float n = v.getFaces().length;
-      // float beta; // (2)
-      // if ( n > 3) {
-      //   beta = 3 / (8 * n);
-      // } else {
-      //   beta = 0.1875;
-      // }
-      float beta = (1/n) * (0.625 - sq(0.375 + 0.25 * cos(2 * PI / n))); // Loop's original algorithm (1)
+      float beta; // (2)
+      if ( n > 3) {
+        beta = 3 / (8 * n);
+      }
+      else {
+        beta = 0.1875;
+      }
+      //float beta = (1/n) * (0.625 - sq(0.375 + 0.25 * cos(2 * PI / n))); // Loop's original algorithm (1)
       //println(beta);
       PVector origPoint = PVector.mult(v.position, 1 - n * beta);
       for (Face f : v.getFaces()) {
