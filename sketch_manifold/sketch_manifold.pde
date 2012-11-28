@@ -28,6 +28,21 @@ void setup() {
   
   manifold = new Manifold();
   
+  // debug dual with boundaries...
+//  Factory factory = new Factory();
+//  manifold.set(factory.pyramid(3, 1, true));
+//  manifold.debug(true);
+//  println("Trying to remove face 0...");
+//  manifold.removeFace(manifold.faces()[0]);
+//  manifold.debug(true);
+//  println("Sorting edges for vertex 0...");
+//  manifold.vertices()[0].sortEdges();
+//  manifold.debug(false);
+//  println("Trying to dual...");
+//  manifold.dual();
+//  println("Dual successful!");
+  
+  
   //---------------------------------------------------------//
   //                        ControlP5                        //
   //---------------------------------------------------------//
@@ -51,7 +66,7 @@ void setup() {
                 .moveTo(seeds).setLabel("num sides");
   
   // MODIFIERS
-  Group modifiers = cp5.addGroup("modifiers").setBackgroundColor(color(0, 64)).setBackgroundHeight(120);
+  Group modifiers = cp5.addGroup("modifiers").setBackgroundColor(color(0, 64)).setBackgroundHeight(140);
   // Conway operations
   cp5.addButton("dual").setPosition(20,20).setSize(100,20)
      .plugTo(manifold).moveTo(modifiers);
@@ -63,14 +78,20 @@ void setup() {
      .plugTo(manifold).moveTo(modifiers);
   cp5.addButton("loop").setPosition(20,80).setSize(100,20)
      .plugTo(manifold).moveTo(modifiers);
+  // Debug
+  cp5.addButton("removeFace").setPosition(20,100).setSize(100,20)
+     .plugTo(manifold).moveTo(modifiers);
   
   // EXPORTERS
   Group exporters = cp5.addGroup("exporters").setBackgroundColor(color(0, 64)).setBackgroundHeight(80)
                        .setLabel("export");
-  
+  // 3D face/vertex/colour
   cp5.addButton("exportOBJ").setPosition(20,20).setSize(100,20)
      .plugTo(manifold).moveTo(exporters);
   cp5.addButton("exportVRML").setPosition(20,40).setSize(100,20)
+     .plugTo(manifold).moveTo(exporters);
+  // Debug
+  cp5.addButton("debug").setPosition(20,60).setSize(100,20)
      .plugTo(manifold).moveTo(exporters);
   
   // VIEWERS
@@ -131,8 +152,12 @@ void gui() {
 void  numSides(int n) {
   primitive.setValue(n);
   //primitive.update();
-  unplug();
-  plug();
+  //unplug();
+  //plug();
+}
+
+void removeFace(int n) {
+  manifold.removeFace(manifold.faces()[0]);
 }
 
 void controlEvent(ControlEvent theEvent) {
@@ -142,20 +167,20 @@ void controlEvent(ControlEvent theEvent) {
     if (id == 0 || id == 1 || id == 2) { // if one of the primitive buttons is pushed
       int n = (int)cp5.getController("numSides").getValue();
       Factory factory = new Factory();
-      unplug();
+      //unplug();
       switch(id) {
         case(0):
-        manifold = factory.pyramid(n, 1, true);
+        manifold.set(factory.pyramid(n, 1, true));
         break;
         case(1):
-        manifold = factory.prism(n, 1);
+        manifold.set(factory.prism(n, 1));
         break;
         case(2):
-        manifold = factory.antiprism(n, 1);
+        manifold.set(factory.antiprism(n, 1));
         break;
       }
       primitive = theEvent.controller();
-      plug();
+      //plug();
     }
   }
 }

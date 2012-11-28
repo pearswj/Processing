@@ -53,8 +53,9 @@ class Vertex {
       boolean rs = false;
       for (int i = 0; i < n; i++) {
         Face f;
-        if (rs == false) {
+        if (rs == false) { // FORWARD SORT (default)
           Edge e = sorted.get(i); // Last edge in sorted list.
+          println("INFO\tVertex::sortEdges; searching from " + e);
           if (this == e.start) {
             f = e.left;
           } 
@@ -63,18 +64,22 @@ class Vertex {
           }
           if (f == null) { // Go back to first edge and reverse sort
             rs = true;
+            i--;
+            println("INFO\tVertex::sortEdges; " + e + " is a boundary edge, returning to start and reversing");
           }
           // Find the next edge (the one with face f on one side).
           for (Edge en: this.edges) {
             if (f == en.left || f == en.right) {
               sorted.add(en);
               this.edges.remove(en);
+              println("INFO\tVertex::sortEdges; edge found: " + en);
               break;
             }
           }
         }
-        else {
+        else { // REVERSE SORT (if boundary found) 
           Edge e = sorted.get(0); // First edge in sorted list.
+          println("INFO\tVertex::sortEdges; searching from " + e);
           if (this == e.start) {
             f = e.right;
           } 
@@ -86,29 +91,38 @@ class Vertex {
             if (f == en.left || f == en.right) {
               sorted.add(0, en);
               this.edges.remove(en);
+              println("INFO\tVertex::sortEdges; edge found: " + en);
               break;
             }
           }
         }
       }
+      // warn if there are edges left over (not a manifold)
+      if (this.edges.size() > 0) {
+        println("WARNING\tVertex::sortEdges; sort error - not a manifold! (" + this.edges.size() + " edge(s) left over.)");
+      }
       this.edges = sorted;
     }
   }
 
-  Face[] getFaces() {
+  Face[] faces() {
     // returns an array of faces to which this vertex belongs (ordered anticlockwise)
-    Face[] faces = new Face[this.edges.size()];
+    //Face[] faces = new Face[this.edges.size()];
+    List<Face> faces = new ArrayList<Face>();
     this.sortEdges();
-    for (int i = 0; i < this.edges.size(); i++) {
-      Edge e = this.edges.get(i);
-      if (this == e.start) {
-        faces[i] = e.right;
-      } 
-      else {
-        faces[i] = e.left;
+    //for (int i = 0; i < this.edges.size(); i++) {
+    //  Edge e = this.edges.get(i);
+    for (Edge e : this.edges) {
+      if (e.isBoundary() == false) {
+        if (this == e.start) {
+          faces.add(e.right);
+        } 
+        else {
+          faces.add(e.left);
+        }
       }
     }
-    return faces;
+    return faces.toArray(new Face[faces.size()]);
   }
   
   Edge edgeTo(Vertex b) {
@@ -171,17 +185,30 @@ class Edge {
   void draw() {
     // TODO: differentiate boundaries
     stroke(0); // TODO: set colour here
-    strokeWeight(2);
+    if (this.isBoundary() == false) {
+      strokeWeight(2);
+    }
+    else {
+      strokeWeight(5);
+    }
     line(this.start.position.x, this.start.position.y, this.start.position.z,
          this.end.position.x, this.end.position.y, this.end.position.z);
   }
   
   float length() {
-    return start.position.dist(end.position);
+    return this.start.position.dist(this.end.position);
   }
   
   PVector vector() {
-    return PVector.sub(end.position, start.position);
+    return PVector.sub(this.end.position, this.start.position);
+  }
+  
+  boolean isBoundary() {
+    return (this.right == null);
+  }
+  
+  PVector midPoint() {
+    return PVector.div(PVector.add(this.start.position, this.end.position), 2);
   }
 }
 
@@ -263,6 +290,29 @@ class Face {
     }
     //A *= 0.5;
     return abs(A * 0.5);
+  }
+  
+  Edge[] edges() {
+    println("INFO:\tFace::getEdges; Finding edges for face " + this);
+    List<Edge> edges = new ArrayList<Edge>();
+    for (Vertex v : this.vertices) {
+      outer:
+      for (Edge e : v.edges) {
+        if (e.left == this || e.right == this) {
+          println("INFO:\tFace::getEdges; checking edge " + e + " in vertex " + v + "...");
+          for (Edge exist : edges) {
+            if (exist == e) {
+              println("INFO:\tFace::getEdges; Hang on, I've already found edge " + e);
+              continue outer;
+            }
+          }
+          edges.add(e);
+          println("INFO:\tFace::getEdges; found edge " + e);
+          continue;
+        }
+      }
+    }
+    return edges.toArray(new Edge[0]);
   }
 }
 

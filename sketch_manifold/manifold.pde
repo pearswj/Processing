@@ -100,18 +100,62 @@ class Manifold {
   Edge addEdge(Vertex start, Vertex end, Face left) {
     return this.addEdge(new Edge(start, end, left));
   }
+  
+  //---------------------------------------------------------//
+  //            Remove vertices, faces and edges             //
+  //---------------------------------------------------------//
 
-  // delete a face:
-  //void deleteFace(Face f) {
-  // check edges, if f was their left, reverse direction (e.start = e.end and e.end = e.start) and e.left = e.right,
-  //}
+  // remove a face:
+  
+  boolean removeFace(Face f) {
+    println("INFO:\tManifold::removeFace; removing face " + f + "...");
+    for (Edge e : f.edges()) {
+      println("INFO:\tManifold::removeFace; removing face " + f + " from edge " + e);
+      if (e.left == f) {
+        // f is on the left of the edge
+        if (e.right != null) {
+          // the edge has a right face, reverse the edge
+          Vertex rev = e.start;
+          e.start = e.end;
+          e.end = rev;
+          e.left = e.right;
+          e.right = null;
+        }
+        else {
+          // no face on right, just remove the edge
+          this.removeEdge(e);
+        }
+      }
+      else {
+        // f is on the left of the edge
+        e.right = null;
+      }
+    }
+    return this.faces.remove(f);
+  }
+  
+  // remove a face:
+  
+  boolean removeEdge(Edge e) {
+    // to be called from Manifold::removeFace
+    // remove the edge from the vertices that list it (i.e. start and end)
+    Vertex[] points = new Vertex[] {e.start, e.end};
+    for (Vertex point : points) {
+      for (Edge ev : point.edges) {
+        if (ev == e) {
+          e.start.edges.remove(e);
+          break;
+        }
+      }
+    }
+    return this.edges.remove(e);
+  } 
 
   //---------------------------------------------------------//
   //                      Draw Methods                       //
   //---------------------------------------------------------//
 
   void drawVertices(boolean normals) {
-    // Draw nodes:
     for (Vertex v : this.vertices) {
       v.draw(normals);
     }
@@ -140,17 +184,19 @@ class Manifold {
   //---------------------------------------------------------//
   //                    Accessor Methods                     //
   //---------------------------------------------------------//
-
-  List<Vertex> vertices() {
-    return this.vertices;
+  
+  // return arrays of vertices, edges and faces
+  
+  Vertex[] vertices() {
+    return this.vertices.toArray(new Vertex[this.vertices.size()]);
   }
 
-  List<Edge> edges() {
-    return this.edges;
+  Edge[] edges() {
+    return this.edges.toArray(new Edge[this.edges.size()]);
   }
 
-  List<Face> faces() {
-    return this.faces;
+  Face[] faces() {
+    return this.faces.toArray(new Face[this.faces.size()]);
   }
 
   //---------------------------------------------------------//
@@ -164,21 +210,39 @@ class Manifold {
     Manifold d = new Manifold();
     // vertices from faces
     for (Face f : this.faces) {
-      PVector c = f.centroid();
-      d.addVertex(c);
+      d.addVertex(f.centroid());
     }
-    // faces from vertices
-    for (Vertex v : this.vertices) {
-      Vertex[] fv = new Vertex[v.edges.size()];
-      Face[] vf = v.getFaces();
-      for (int i = 0; i < vf.length; i++) {
-        fv[i] = d.vertices.get(this.faces.indexOf(vf[i]));
+    // vertices from boundary edges
+    Vertex[] boundaryPoints = new Vertex[this.edges.size()];
+    //for (Edge e : this.edges) {
+    for (int i = 0; i < this.edges.size(); i++) {
+      if (this.edges.get(i).isBoundary() == true) {
+        // add boundaryPoint to dual (also store in boundaryPoints for indexing)
+        boundaryPoints[i] = d.addVertex(this.edges.get(i).midPoint());
       }
-      d.addFace(fv);
     }
-    this.vertices = d.vertices;
-    this.edges = d.edges;
-    this.faces = d.faces;
+    // faces from vertices (and boundary points)
+    for (Vertex v : this.vertices) {
+      //Vertex[] fv = new Vertex[v.edges.size()];
+      List<Vertex> fv = new ArrayList<Vertex>();
+      Face[] vf = v.faces();
+      
+      println("INFO\tManifold::dual; " + vf.length + " faces on vertex " + v);
+      if (v.edges.get(0).isBoundary() == true) {
+        fv.add(boundaryPoints[this.edges.indexOf(v.edges.get(0))]);
+      }
+      //for (int i = 0; i < vf.length; i++) {
+      for (Face f : vf) {
+        //fv[i] = d.vertices.get(this.faces.indexOf(vf[i]));
+        println("INFO\tManifold::dual; adding face-point for face " + f);
+        fv.add(d.vertices.get(this.faces.indexOf(f)));
+      }
+      if (v.edges.get(v.edges.size()-1).isBoundary() == true) {
+        fv.add(boundaryPoints[this.edges.indexOf(v.edges.get(v.edges.size()-1))]);
+      }
+      d.addFace(fv.toArray(new Vertex[0]));
+    }
+    this.set(d);
     return d;
   }
 
@@ -223,10 +287,10 @@ class Manifold {
       PVector oldCoords = v.position.get();
       // average of the face points of the faces the point belongs to
       PVector avgFacePoints = new PVector();
-      for (Face f : v.getFaces()) {
+      for (Face f : v.faces()) {
         avgFacePoints.add(facePoints[this.faces.indexOf(f)].position);
       }
-      avgFacePoints.div(v.getFaces().length);
+      avgFacePoints.div(v.faces().length);
       // average of the centers of edges the point belongs to
       PVector avgEdgePoints = new PVector();
       for (Edge e : v.edges) {
@@ -234,7 +298,7 @@ class Manifold {
       }
       avgEdgePoints.div(v.edges.size());
       // calculate new coordinates
-      float n = v.getFaces().length; // number of faces a point belongs to
+      float n = v.faces().length; // number of faces a point belongs to
       PVector newCoords = PVector.sub(PVector.mult(avgEdgePoints, 4), avgFacePoints);
       newCoords.add(PVector.mult(oldCoords, (n-3)));
       newCoords.div(n);
@@ -258,9 +322,7 @@ class Manifold {
         cc.addFace(subFace);
       }
     }
-    this.vertices = cc.vertices;
-    this.edges = cc.edges;
-    this.faces = cc.faces;
+    this.set(cc);
     return cc;
   }
 
@@ -298,7 +360,7 @@ class Manifold {
     // for each ORIGINAL POINT, create a new point
     Vertex[] origPoints = new Vertex[this.vertices.size()];
     for (Vertex v : this.vertices) {
-      float n = v.getFaces().length;
+      float n = v.faces().length;
       float beta; // (2)
       if ( n > 3) {
         beta = 3 / (8 * n);
@@ -309,7 +371,7 @@ class Manifold {
       //float beta = (1/n) * (0.625 - sq(0.375 + 0.25 * cos(2 * PI / n))); // Loop's original algorithm (1)
       //println(beta);
       PVector origPoint = PVector.mult(v.position, 1 - n * beta);
-      for (Face f : v.getFaces()) {
+      for (Face f : v.faces()) {
         origPoint.add(PVector.mult(f.vertices[(Arrays.asList(f.vertices).indexOf(v) + 1) % f.vertices.length].position, beta));
       }
       origPoints[this.vertices.indexOf(v)] = l.addVertex(origPoint);
@@ -331,9 +393,7 @@ class Manifold {
       }
       l.addFace(newf);
     }
-    this.vertices = l.vertices;
-    this.edges = l.edges;
-    this.faces = l.faces;
+    this.set(l);
     return l;
   }
 
@@ -349,13 +409,23 @@ class Manifold {
       v.position.setMag(1);
     }
   }
+  
+  void set(Manifold m) {
+    this.vertices = m.vertices;
+    this.edges = m.edges;
+    this.faces = m.faces;
+  }
 
   // Debug...
+  
+  void debug() {
+    this.debug(true);
+  }
 
   void debug(boolean detail) {
     println("// " + this + "\n");
 
-    println("Vertices: " + this.vertices().size());
+    println("Vertices: " + this.vertices.size());
     if (detail) {
       for (Vertex v : this.vertices) {
         println("* " + v + ":\t" + v.position);
@@ -363,7 +433,7 @@ class Manifold {
       println();
     }
 
-    println("Edges: " + this.edges().size());
+    println("Edges: " + this.edges.size());
     if (detail) {
       for (Edge e : this.edges) {
         println("* " + e + ":\t" + e.left + "\t" + e.right);
@@ -371,7 +441,7 @@ class Manifold {
       println();
     }
 
-    println("Faces: " + this.faces().size());
+    println("Faces: " + this.faces.size());
     if (detail) {
       for (Face f : this.faces) {
         print("* " + f + ":");
