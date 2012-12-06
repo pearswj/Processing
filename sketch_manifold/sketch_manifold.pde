@@ -28,20 +28,6 @@ void setup() {
   
   manifold = new Manifold();
   
-  // debug dual with boundaries...
-//  Factory factory = new Factory();
-//  manifold.set(factory.pyramid(3, 1, true));
-//  manifold.debug(true);
-//  println("Trying to remove face 0...");
-//  manifold.removeFace(manifold.faces()[0]);
-//  manifold.debug(true);
-//  println("Sorting edges for vertex 0...");
-//  manifold.vertices()[0].sortEdges();
-//  manifold.debug(false);
-//  println("Trying to dual...");
-//  manifold.dual();
-//  println("Dual successful!");
-  
   
   //---------------------------------------------------------//
   //                        ControlP5                        //
@@ -66,7 +52,7 @@ void setup() {
                 .moveTo(seeds).setLabel("num sides");
   
   // MODIFIERS
-  Group modifiers = cp5.addGroup("modifiers").setBackgroundColor(color(0, 64)).setBackgroundHeight(140);
+  Group modifiers = cp5.addGroup("modifiers").setBackgroundColor(color(0, 64)).setBackgroundHeight(160);
   // Conway operations
   cp5.addButton("dual").setPosition(20,20).setSize(100,20)
      .plugTo(manifold).moveTo(modifiers);
@@ -80,6 +66,8 @@ void setup() {
      .plugTo(manifold).moveTo(modifiers);
   // Debug
   cp5.addButton("removeFace").setPosition(20,100).setSize(100,20)
+     .plugTo(manifold).moveTo(modifiers);
+  cp5.addButton("triangulate").setPosition(20,120).setSize(100,20)
      .plugTo(manifold).moveTo(modifiers);
   
   // EXPORTERS
@@ -151,9 +139,6 @@ void gui() {
 
 void  numSides(int n) {
   primitive.setValue(n);
-  //primitive.update();
-  //unplug();
-  //plug();
 }
 
 void removeFace(int n) {
@@ -161,45 +146,25 @@ void removeFace(int n) {
 }
 
 void controlEvent(ControlEvent theEvent) {
-  //println(theEvent.controller().name()+" = "+theEvent.value());
   if (!theEvent.isGroup()) {
+    //logger(this, "DEBUG", "controlEvent; " + theEvent.controller().name() + " = " + theEvent.value());
     int id = theEvent.controller().getId();
     if (id == 0 || id == 1 || id == 2) { // if one of the primitive buttons is pushed
       int n = (int)cp5.getController("numSides").getValue();
       Factory factory = new Factory();
-      //unplug();
       switch(id) {
         case(0):
-        manifold.set(factory.pyramid(n, 1, true));
+        manifold.set(factory.pyramid(n));
         break;
         case(1):
-        manifold.set(factory.prism(n, 1));
+        manifold.set(factory.prism(n));
         break;
         case(2):
-        manifold.set(factory.antiprism(n, 1));
+        manifold.set(factory.antiprism(n));
         break;
       }
       primitive = theEvent.controller();
-      //plug();
     }
   }
-}
-
-void unplug() {
-  cp5.getController("exportOBJ").unplugFrom(manifold);
-  cp5.getController("exportVRML").unplugFrom(manifold);
-  cp5.getController("dual").unplugFrom(manifold);
-  cp5.getController("toSphere").unplugFrom(manifold);
-  cp5.getController("catmullClark").unplugFrom(manifold);
-  cp5.getController("loop").unplugFrom(manifold);  
-}
-
-void plug() {
-  cp5.getController("exportOBJ").plugTo(manifold);
-  cp5.getController("exportVRML").plugTo(manifold);
-  cp5.getController("dual").plugTo(manifold);
-  cp5.getController("toSphere").plugTo(manifold);
-  cp5.getController("catmullClark").plugTo(manifold);
-  cp5.getController("loop").plugTo(manifold);
 }
 

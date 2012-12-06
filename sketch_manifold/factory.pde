@@ -4,16 +4,33 @@
  Will Pearson, University of Bath, November 2012.
  
  * To create basic polyhedra (pyramids, prisms and antiprisms)
+ * TODO: bipyramid, primitives (tetrahedron, cube, octahedron, dodecahedron, icosahedron)
  
  */
 
 /////////////////////////////////////////////////////////////
-//                     Manifold Class                      //
+//                      Factory Class                      //
 /////////////////////////////////////////////////////////////
 
 class Factory {
 
   Factory() {
+  }
+  
+  //---------------------------------------------------------//
+  //                       Primitives                        //
+  //---------------------------------------------------------//
+  
+  Manifold tetrahedron() {
+    return this.pyramid(3, 1, true);
+  }
+  
+  Manifold cube() {
+    return this.prism(4, 1);
+  }
+  
+  Manifold octahedron() {
+    return this.antiprism(3, 1);
   }
 
   //---------------------------------------------------------//
@@ -25,10 +42,19 @@ class Factory {
     Manifold t = new Manifold();
 
     float a = 2 * PI / n;
-    float m = (0.5*s) / sin(0.5*a);
+    boolean ignoreSideLengths = (s == 0);
+    float R;
+    if (ignoreSideLengths) {
+      s = 1;
+      //R = (0.5*s) / sin(0.5*(2 * PI / 3)); // R set for pyramid with 3-sided base, side length 1
+      R = 0.7;
+    }
+    else {
+      R = (0.5*s) / sin(0.5*a);
+    }
     float h; // height
     if (constrainLaterals && n < 6) {
-      h = sqrt(sq(s) - sq(m)); // length of lateral edges == length of base edges (doesn't make sense for n >= 6!)
+      h = sqrt(sq(s) - sq(R)); // length of lateral edges == length of base edges (doesn't make sense for n >= 6!)
     } 
     else {
       h = s;
@@ -37,7 +63,7 @@ class Factory {
 
     // Add vertices for base (anticlockwise, looking down)
     for (int i = 0; i < n; i++) {
-      t.addVertex(new PVector(m * sin(-i * a), h/4, m * cos(-i * a)));
+      t.addVertex(new PVector(R * sin(-i * a), h/4, R * cos(-i * a)));
     }
     t.addVertex(new PVector(0, -3*h/4, 0)); // apex
 
@@ -50,12 +76,12 @@ class Factory {
       base[i] = n - (i + 1); // reverse order
     }
     t.addFace(base);
-
+    logger(this, "INFO", "pyramid; new pyramid created with " + n + " sides");
     return t;
   }
 
   Manifold pyramid(int n) {
-    return this.pyramid(n, 1, false);
+    return this.pyramid(n, 0, false);
   }
 
   //---------------------------------------------------------//
@@ -67,8 +93,16 @@ class Factory {
     Manifold c = new Manifold();
 
     float a = 2 * PI / n; // angle
-    float R = (0.5*s) / sin(0.5*a); // radius
-
+    boolean ignoreSideLengths = (s == 0);
+    float R;
+    if (ignoreSideLengths) {
+      s = 1;
+      R = 0.7;
+    }
+    else {
+      R = (0.5*s) / sin(0.5*a); // radius
+    }
+    
     // Add vertices for top face (anticlockwise, looking down). 
     for (int i = 0; i < n; i++) {
       c.addVertex(new PVector(R * cos(i * a), -0.5 * s, R * sin(i * a)));
@@ -95,13 +129,12 @@ class Factory {
       }
       );
     }
-
+    logger(this, "INFO", "prism; new prism created with " + n + " sides");
     return c;
   }
 
   Manifold prism(int n) {
-    // Simpler method for sidelength 1
-    return this.prism(n, 1); //.toSphere();
+    return this.prism(n, 0);
   }
 
   //---------------------------------------------------------//
@@ -113,8 +146,17 @@ class Factory {
     Manifold c = new Manifold();
 
     float a = 2 * PI / n; // angle
-    float R = (0.5*s) / sin(0.5*a); // radius
-    float h = sqrt(1 - 0.24 * sq(1/cos(PI/(2*n)))); // height (see http://mathworld.wolfram.com/Antiprism.html)
+    boolean ignoreSideLengths = (s == 0);
+    float R, h;
+    if (ignoreSideLengths) {
+      s = 1;
+      R = 0.7;
+      h = 1;
+    }
+    else {
+      R = (0.5*s) / sin(0.5*a); // radius
+      h = sqrt(1 - 0.24 * sq(1/cos(PI/(2*n)))); // height (see http://mathworld.wolfram.com/Antiprism.html)
+    }
 
     // Add vertices for top face (anticlockwise). 
     for (int i = 0; i < n; i++) {
@@ -146,13 +188,12 @@ class Factory {
       }
       );
     }
-
+    logger(this, "INFO", "antiprism; new antiprism created with " + n + " sides");
     return c;
   }
 
   Manifold antiprism(int n) {
-    // See prism short method.
-    return this.antiprism(n, 1);
+    return this.antiprism(n, 0);
   }
 }
 
