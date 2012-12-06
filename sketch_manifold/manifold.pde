@@ -327,10 +327,10 @@ class Manifold {
   Manifold loop() {
     // http://www.cs.cmu.edu/afs/cs/academic/class/15462-s12/www/lec_slides/lec07.pdf (1)
     // http://graphics.stanford.edu/~mdfisher/subdivision.html (2)
-    // apply to triangular based meshes ONLY. 
+    // Note: triangulates non triangular faces first. 
     // TODO: handle boundaries
     Manifold l = new Manifold();
-
+    this.triangulate();
     // for each edge, an EDGE POINT is created
     Vertex[] edgePoints = new Vertex[this.edges.size()];
     for (Edge e : this.edges) {
@@ -403,6 +403,27 @@ class Manifold {
     // Note: assumes that the centroid of the manifold is at the origin.
     for (Vertex v : this.vertices) {
       v.position.setMag(1);
+    }
+  }
+  
+  void triangulate() {
+    // Triangulate any faces with more than 3 sides
+    // Draw fan around centroid
+    Face[] originalFaces = this.faces.toArray(new Face[0]); // Clone
+    for (Face f : originalFaces) {
+      int n = f.vertices.length;
+      if (n > 3) {
+        logger(this, "DEBUG", "triangulate; triangulating face " + f);
+        Vertex centroid = this.addVertex(f.centroid());
+        this.removeFace(f);
+        for (int i = 0; i < n; i++) {
+          logger(this, "DEBUG", "triangulate; add new face");
+          this.addFace(new Vertex[] {
+            f.vertices[i], f.vertices[(i+1)%n], centroid
+          }
+          );
+        }
+      }
     }
   }
   
