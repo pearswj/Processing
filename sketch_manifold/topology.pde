@@ -48,14 +48,15 @@ class Vertex {
     // TODO: test for boundaries
     if (!this.edges.isEmpty()) {
       List<Edge> sorted = new ArrayList<Edge>();
-      sorted.add(this.edges.remove(0));
+      Edge e = this.edges.remove(0);
+      sorted.add(e);
       int n = this.edges.size(); // Store this somewhere safe...
       boolean rs = false;
       for (int i = 0; i < n; i++) {
         Face f;
         if (rs == false) { // FORWARD SORT (default)
-          Edge e = sorted.get(i); // Last edge in sorted list.
-          println("INFO\tVertex::sortEdges; searching from " + e);
+          //Edge e = sorted.get(i); // Last edge in sorted list.
+          logger(this, "DEBUG", "sortEdges; searching from " + e);
           if (this == e.start) {
             f = e.left;
           } 
@@ -64,22 +65,25 @@ class Vertex {
           }
           if (f == null) { // Go back to first edge and reverse sort
             rs = true;
+            e = sorted.get(0);
             i--;
-            println("INFO\tVertex::sortEdges; " + e + " is a boundary edge, returning to start and reversing");
+            logger(this, "DEBUG", "sortEdges; " + e + " is a boundary edge, returning to start and reversing");
+            continue;
           }
           // Find the next edge (the one with face f on one side).
           for (Edge en: this.edges) {
             if (f == en.left || f == en.right) {
               sorted.add(en);
               this.edges.remove(en);
-              println("INFO\tVertex::sortEdges; edge found: " + en);
+              logger(this, "DEBUG", "sortEdges; edge found: " + en);
+              e = en;
               break;
             }
           }
         }
         else { // REVERSE SORT (if boundary found) 
-          Edge e = sorted.get(0); // First edge in sorted list.
-          println("INFO\tVertex::sortEdges; searching from " + e);
+          //Edge e = sorted.get(0); // First edge in sorted list.
+          logger(this, "DEBUG", "sortEdges; searching from " + e);
           if (this == e.start) {
             f = e.right;
           } 
@@ -91,7 +95,8 @@ class Vertex {
             if (f == en.left || f == en.right) {
               sorted.add(0, en);
               this.edges.remove(en);
-              println("INFO\tVertex::sortEdges; edge found: " + en);
+              e = en;
+              logger(this, "DEBUG", "sortEdges; edge found: " + en);
               break;
             }
           }
@@ -99,7 +104,7 @@ class Vertex {
       }
       // warn if there are edges left over (not a manifold)
       if (this.edges.size() > 0) {
-        println("WARNING\tVertex::sortEdges; sort error - not a manifold! (" + this.edges.size() + " edge(s) left over.)");
+        logger(this, "WARNING", "sortEdges; sort error - not a manifold! (" + this.edges.size() + " edge(s) left over.)");
       }
       this.edges = sorted;
     }
@@ -107,19 +112,14 @@ class Vertex {
 
   Face[] faces() {
     // returns an array of faces to which this vertex belongs (ordered anticlockwise)
-    //Face[] faces = new Face[this.edges.size()];
     List<Face> faces = new ArrayList<Face>();
     this.sortEdges();
-    //for (int i = 0; i < this.edges.size(); i++) {
-    //  Edge e = this.edges.get(i);
     for (Edge e : this.edges) {
-      if (e.isBoundary() == false) {
-        if (this == e.start) {
-          faces.add(e.right);
-        } 
-        else {
-          faces.add(e.left);
-        }
+      if (this == e.start && e.right != null) {
+        faces.add(e.right);
+      } 
+      else if (this == e.end && e.left != null) {
+        faces.add(e.left);
       }
     }
     return faces.toArray(new Face[faces.size()]);
@@ -137,8 +137,9 @@ class Vertex {
   
   Edge edgeWith(Vertex b) {
     // Find edge starting/ending at this and ending/starting at b (non-directional)
-    if (this.edgeTo(b) != null) {
-      return this.edgeTo(b);
+    Edge e = this.edgeTo(b);
+    if (e != null) {
+      return e;
     } else {
       return b.edgeTo(this);
     }
@@ -185,7 +186,7 @@ class Edge {
   void draw() {
     // TODO: differentiate boundaries
     stroke(0); // TODO: set colour here
-    if (this.isBoundary() == false) {
+    if (this.boundary() == false) {
       strokeWeight(2);
     }
     else {
@@ -203,12 +204,21 @@ class Edge {
     return PVector.sub(this.end.position, this.start.position);
   }
   
-  boolean isBoundary() {
+  boolean boundary() {
     return (this.right == null);
   }
   
   PVector midPoint() {
     return PVector.div(PVector.add(this.start.position, this.end.position), 2);
+  }
+  
+  void reverse() {
+    Vertex tempVertex = this.start;
+    this.start = this.end;
+    this.end = tempVertex;
+    Face tempFace = this.left;
+    this.left = this.right;
+    this.right = tempFace;
   }
 }
 
@@ -293,26 +303,14 @@ class Face {
   }
   
   Edge[] edges() {
-    println("INFO:\tFace::getEdges; Finding edges for face " + this);
-    List<Edge> edges = new ArrayList<Edge>();
-    for (Vertex v : this.vertices) {
-      outer:
-      for (Edge e : v.edges) {
-        if (e.left == this || e.right == this) {
-          println("INFO:\tFace::getEdges; checking edge " + e + " in vertex " + v + "...");
-          for (Edge exist : edges) {
-            if (exist == e) {
-              println("INFO:\tFace::getEdges; Hang on, I've already found edge " + e);
-              continue outer;
-            }
-          }
-          edges.add(e);
-          println("INFO:\tFace::getEdges; found edge " + e);
-          continue;
-        }
-      }
-    }
-    return edges.toArray(new Edge[0]);
+    // For each pair of vertices, get the edge!
+    logger(this, "INFO", "getEdges; Finding edges for face " + this);
+    int n = this.vertices.length;
+    Edge[] edges = new Edge[n];
+    for (int i = 0; i < n; i++) {
+      edges[i] = this.vertices[i].edgeWith(this.vertices[(i+1)%n]);
+    } 
+    return edges;
   }
 }
 

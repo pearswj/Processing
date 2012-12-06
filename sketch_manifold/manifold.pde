@@ -104,26 +104,25 @@ class Manifold {
   //---------------------------------------------------------//
   //            Remove vertices, faces and edges             //
   //---------------------------------------------------------//
-
-  // remove a face:
   
   boolean removeFace(Face f) {
-    println("INFO:\tManifold::removeFace; removing face " + f + "...");
+    // remove a face
+    logger(this, "INFO", "removeFace; removing face " + f + "...");
     for (Edge e : f.edges()) {
-      println("INFO:\tManifold::removeFace; removing face " + f + " from edge " + e);
+      logger(this, "DEBUG", "removeFace; removing face " + f + " from edge " + e);
       if (e.left == f) {
         // f is on the left of the edge
         if (e.right != null) {
           // the edge has a right face, reverse the edge
-          Vertex rev = e.start;
-          e.start = e.end;
-          e.end = rev;
-          e.left = e.right;
+          e.reverse();
           e.right = null;
         }
         else {
           // no face on right, just remove the edge
-          this.removeEdge(e);
+          //this.removeEdge(e);
+          e.start.edges.remove(e);
+          e.end.edges.remove(e);
+          this.edges.remove(e);
         }
       }
       else {
@@ -134,20 +133,14 @@ class Manifold {
     return this.faces.remove(f);
   }
   
-  // remove a face:
-  
   boolean removeEdge(Edge e) {
-    // to be called from Manifold::removeFace
+    // remove an edge
     // remove the edge from the vertices that list it (i.e. start and end)
-    Vertex[] points = new Vertex[] {e.start, e.end};
-    for (Vertex point : points) {
-      for (Edge ev : point.edges) {
-        if (ev == e) {
-          e.start.edges.remove(e);
-          break;
-        }
-      }
-    }
+    e.start.edges.remove(e);
+    e.end.edges.remove(e);
+    // remove the faces that depended on this edge
+    this.removeFace(e.left);
+    this.removeFace(e.right);
     return this.edges.remove(e);
   } 
 
@@ -216,31 +209,34 @@ class Manifold {
     Vertex[] boundaryPoints = new Vertex[this.edges.size()];
     //for (Edge e : this.edges) {
     for (int i = 0; i < this.edges.size(); i++) {
-      if (this.edges.get(i).isBoundary() == true) {
+      if (this.edges.get(i).boundary() == true) {
         // add boundaryPoint to dual (also store in boundaryPoints for indexing)
         boundaryPoints[i] = d.addVertex(this.edges.get(i).midPoint());
       }
     }
     // faces from vertices (and boundary points)
     for (Vertex v : this.vertices) {
-      //Vertex[] fv = new Vertex[v.edges.size()];
-      List<Vertex> fv = new ArrayList<Vertex>();
-      Face[] vf = v.faces();
-      
-      println("INFO\tManifold::dual; " + vf.length + " faces on vertex " + v);
-      if (v.edges.get(0).isBoundary() == true) {
-        fv.add(boundaryPoints[this.edges.indexOf(v.edges.get(0))]);
+      if (v.edges.size() > 0) { // Check that vertex isn't an orphan 
+        //Vertex[] fv = new Vertex[v.edges.size()];
+        List<Vertex> fv = new ArrayList<Vertex>();
+        Face[] vf = v.faces();
+        logger(this, "DEBUG", "dual; " + vf.length + " faces on vertex " + v);
+        if (v.edges.get(0).boundary() == true) {
+          logger(this, "DEBUG", "dual; adding edge-point for boundary edge");// " + e);
+          fv.add(boundaryPoints[this.edges.indexOf(v.edges.get(0))]);
+        }
+        //for (int i = 0; i < vf.length; i++) {
+        for (Face f : vf) {
+          //fv[i] = d.vertices.get(this.faces.indexOf(vf[i]));
+          logger(this, "DEBUG", "dual; adding face-point for face");// " + f);
+          fv.add(d.vertices.get(this.faces.indexOf(f)));
+        }
+        if (v.edges.get(v.edges.size()-1).boundary() == true) {
+          logger(this, "DEBUG", "dual; adding edge-point for boundary edge");// " + e);
+          fv.add(boundaryPoints[this.edges.indexOf(v.edges.get(v.edges.size()-1))]);
+        }
+        d.addFace(fv.toArray(new Vertex[0]));
       }
-      //for (int i = 0; i < vf.length; i++) {
-      for (Face f : vf) {
-        //fv[i] = d.vertices.get(this.faces.indexOf(vf[i]));
-        println("INFO\tManifold::dual; adding face-point for face " + f);
-        fv.add(d.vertices.get(this.faces.indexOf(f)));
-      }
-      if (v.edges.get(v.edges.size()-1).isBoundary() == true) {
-        fv.add(boundaryPoints[this.edges.indexOf(v.edges.get(v.edges.size()-1))]);
-      }
-      d.addFace(fv.toArray(new Vertex[0]));
     }
     this.set(d);
     return d;
@@ -428,7 +424,7 @@ class Manifold {
     println("Vertices: " + this.vertices.size());
     if (detail) {
       for (Vertex v : this.vertices) {
-        println("* " + v + ":\t" + v.position);
+        println("* " + v + ":\t" + v.position + "\t (" + v.edges.size() + " edge(s))");
       }
       println();
     }
