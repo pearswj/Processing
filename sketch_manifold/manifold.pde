@@ -268,36 +268,54 @@ class Manifold {
     Vertex[] edgePoints = new Vertex[this.edges.size()];
     for (Edge e : this.edges) {
       PVector edgePoint = new PVector();
-      edgePoint.add(e.left.centroid());
-      edgePoint.add(e.right.centroid());
-      edgePoint.add(e.start.position);
-      edgePoint.add(e.end.position);
-      edgePoint.div(4);
+      if (!e.boundary()) {
+        edgePoint.add(e.left.centroid());
+        edgePoint.add(e.right.centroid());
+        edgePoint.add(e.start.position);
+        edgePoint.add(e.end.position);
+        edgePoint.div(4);
+      }
+      else {
+        edgePoint = e.midPoint();
+      }
       edgePoints[this.edges.indexOf(e)] = cc.addVertex(edgePoint);
     }
 
-    // for each ORIGINAL POINT, update location based on: (-Q + 4E + (n-3)*S)/n 
+    // for each ORIGINAL POINT, update location based on (2)
     Vertex[] origPoints = new Vertex[this.vertices.size()];
     for (Vertex v : this.vertices) {
+      PVector newCoords;
       // old coordinates
-      PVector oldCoords = v.position.get();
-      // average of the face points of the faces the point belongs to
-      PVector avgFacePoints = new PVector();
-      for (Face f : v.faces()) {
-        avgFacePoints.add(facePoints[this.faces.indexOf(f)].position);
+      PVector oldCoords = v.position.get(); // S
+      if (!v.boundary()) { // (-Q + 4E + (n-3)*S)/n
+        // average of the face points of the faces the point belongs to
+        PVector avgFacePoints = new PVector(); // Q
+        for (Face f : v.faces()) {
+          avgFacePoints.add(facePoints[this.faces.indexOf(f)].position);
+        }
+        avgFacePoints.div(v.faces().length);
+        // average of the centers of edges the point belongs to
+        PVector avgEdgePoints = new PVector(); // E
+        for (Edge e : v.edges) {
+          avgEdgePoints.add(edgePoints[this.edges.indexOf(e)].position);
+        }
+        avgEdgePoints.div(v.edges.size());
+        // calculate new coordinates
+        float n = v.faces().length; // number of faces a point belongs to
+        newCoords = PVector.sub(PVector.mult(avgEdgePoints, 4), avgFacePoints);
+        newCoords.add(PVector.mult(oldCoords, (n-3)));
+        newCoords.div(n);
       }
-      avgFacePoints.div(v.faces().length);
-      // average of the centers of edges the point belongs to
-      PVector avgEdgePoints = new PVector();
-      for (Edge e : v.edges) {
-        avgEdgePoints.add(edgePoints[this.edges.indexOf(e)].position);
+      else { // S/2 + M/4
+        PVector avgBoundaryEdgePoints = new PVector(); // M
+        for (Edge e : v.edges()) {
+          if (e.boundary()) {
+            avgBoundaryEdgePoints.add(e.midPoint());
+          }
+        }
+        newCoords = PVector.div(oldCoords, 2);
+        newCoords.add(PVector.div(avgBoundaryEdgePoints, 4));
       }
-      avgEdgePoints.div(v.edges.size());
-      // calculate new coordinates
-      float n = v.faces().length; // number of faces a point belongs to
-      PVector newCoords = PVector.sub(PVector.mult(avgEdgePoints, 4), avgFacePoints);
-      newCoords.add(PVector.mult(oldCoords, (n-3)));
-      newCoords.div(n);
       origPoints[this.vertices.indexOf(v)] = cc.addVertex(newCoords); // update
     }
 
@@ -335,40 +353,61 @@ class Manifold {
     Vertex[] edgePoints = new Vertex[this.edges.size()];
     for (Edge e : this.edges) {
       PVector edgePoint = new PVector();
-      for (Vertex v : e.left.vertices) {
-        if (v != e.start && v != e.end) {
-          edgePoint.add(PVector.mult(v.position, 0.125));
-          break;
+      if (!e.boundary()) {
+        for (Vertex v : e.left.vertices) {
+          if (v != e.start && v != e.end) {
+            edgePoint.add(PVector.mult(v.position, 0.125));
+            break;
+          }
         }
-      }
-      for (Vertex v : e.right.vertices) {
-        if (v != e.start && v != e.end) {
-          edgePoint.add(PVector.mult(v.position, 0.125));
-          break;
+        for (Vertex v : e.right.vertices) {
+          if (v != e.start && v != e.end) {
+            edgePoint.add(PVector.mult(v.position, 0.125));
+            break;
+          }
         }
+        edgePoint.add(PVector.mult(e.start.position, 0.375));
+        edgePoint.add(PVector.mult(e.end.position, 0.375));
       }
-      edgePoint.add(PVector.mult(e.start.position, 0.375));
-      edgePoint.add(PVector.mult(e.end.position, 0.375));
-
+      else {
+        edgePoint = PVector.mult(e.start.position, 0.5);
+        edgePoint.add(PVector.mult(e.end.position, 0.5));
+      }
       edgePoints[this.edges.indexOf(e)] = l.addVertex(edgePoint);
     }
 
     // for each ORIGINAL POINT, create a new point
     Vertex[] origPoints = new Vertex[this.vertices.size()];
     for (Vertex v : this.vertices) {
-      float n = v.faces().length;
-      float beta; // (2)
-      if ( n > 3) {
-        beta = 3 / (8 * n);
+      PVector origPoint;
+      if (!v.boundary()) {
+        float n = v.faces().length;
+        float beta; // (2)
+        if ( n > 3) {
+          beta = 3 / (8 * n);
+        }
+        else {
+          beta = 0.1875;
+        }
+        //float beta = (1/n) * (0.625 - sq(0.375 + 0.25 * cos(2 * PI / n))); // Loop's original algorithm (1)
+        //println(beta);
+        origPoint = PVector.mult(v.position, 1 - n * beta);
+        for (Face f : v.faces()) {
+          origPoint.add(PVector.mult(f.vertices[(Arrays.asList(f.vertices).indexOf(v) + 1) % f.vertices.length].position, beta));
+        }
       }
       else {
-        beta = 0.1875;
-      }
-      //float beta = (1/n) * (0.625 - sq(0.375 + 0.25 * cos(2 * PI / n))); // Loop's original algorithm (1)
-      //println(beta);
-      PVector origPoint = PVector.mult(v.position, 1 - n * beta);
-      for (Face f : v.faces()) {
-        origPoint.add(PVector.mult(f.vertices[(Arrays.asList(f.vertices).indexOf(v) + 1) % f.vertices.length].position, beta));
+        origPoint = PVector.mult(v.position, 0.75);
+        for (Edge e : v.edges()) {
+          if (e.boundary()) {
+            if (v == e.start) {
+            origPoint.add(PVector.mult(e.end.position, 0.125));
+            }
+            else {
+              origPoint.add(PVector.mult(e.start.position, 0.125));
+            }
+          }
+        }
       }
       origPoints[this.vertices.indexOf(v)] = l.addVertex(origPoint);
     }

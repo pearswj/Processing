@@ -109,6 +109,10 @@ class Vertex {
       this.edges = sorted;
     }
   }
+  
+  Edge[] edges() {
+    return this.edges.toArray(new Edge[0]);
+  }
 
   Face[] faces() {
     // returns an array of faces to which this vertex belongs (ordered anticlockwise)
@@ -162,6 +166,10 @@ class Vertex {
       n.add(a.cross(b));
     }
     return n.normalize(null);
+  }
+  
+  boolean boundary() {
+    return (this.faces().length != this.edges().length);
   }
 }
 
@@ -304,7 +312,7 @@ class Face {
   
   Edge[] edges() {
     // For each pair of vertices, get the edge!
-    logger(this, "INFO", "getEdges; Finding edges for face " + this);
+    logger(this, "DEBUG", "edges; Finding edges for face " + this);
     int n = this.vertices.length;
     Edge[] edges = new Edge[n];
     for (int i = 0; i < n; i++) {
