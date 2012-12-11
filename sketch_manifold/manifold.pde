@@ -479,36 +479,45 @@ class Manifold {
   }
 
   void debug(boolean detail) {
-    println("// " + this + "\n");
+    logger(this, "INFO", "debug; printing topological/geometrical information...");
+    
+    println();
 
-    println("Vertices: " + this.vertices.size());
+    println(" * Vertices: " + this.vertices.size());
     if (detail) {
       for (Vertex v : this.vertices) {
-        println("* " + v + ":\t" + v.position + "\t (" + v.edges.size() + " edge(s))");
+        println("   - " + v);
+        println("     ~ " + v.position);
+        print("     ~ " + v.edges.size() + " edge(s):");
+        for (Edge e : v.edges) {
+          print(" " + e);
+        }
+        println();
       }
-      println();
+      //println();
     }
 
-    println("Edges: " + this.edges.size());
+    println(" * Edges: " + this.edges.size());
     if (detail) {
       for (Edge e : this.edges) {
-        println("* " + e + ":\t" + e.left + "\t" + e.right);
+        println("   - " + e);
+        println("     ~ (l) " + e.left + ", (r) " + e.right);
+        println("     ~ (s) " + e.start + ", (e) " + e.end);
       }
-      println();
+      //println();
     }
 
-    println("Faces: " + this.faces.size());
+    println(" * Faces: " + this.faces.size());
     if (detail) {
       for (Face f : this.faces) {
-        print("* " + f + ":");
+        print("   - " + f + "");
         //for (Edge fe : f.edges) {
         //  print("\t" + fe);
         //}
         println();
       }
     }
-
-    println();
+    //println();
   }
   
   //---------------------------------------------------------//
@@ -518,6 +527,7 @@ class Manifold {
   // OBJ (http://en.wikipedia.org/wiki/Wavefront_.obj_file)
   
   void exportOBJ() {
+    logger(this, "INFO", "exportOBJ; exporting OBJ file");
     PrintWriter obj = createWriter("export.obj");
     // vertices: "v x y z w"
     for (Vertex v : this.vertices) {
@@ -542,6 +552,7 @@ class Manifold {
   // VRML (Indexed Face Sets: http://cs.iupui.edu/~aharris/mm/vrml4/vrml4.html)
   
   void exportVRML() {
+    logger(this, "INFO", "exportVRML; exporting VRML file");
     PrintWriter vrml = createWriter("export.wrl");
     vrml.println("#VRML V2.0 utf8");
     vrml.println("Shape {");

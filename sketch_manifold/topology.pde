@@ -8,12 +8,24 @@
  * Face class
  
  */
+ 
+/////////////////////////////////////////////////////////////
+//                (Abstract) Topology Class                //
+/////////////////////////////////////////////////////////////
+ 
+abstract class Topology extends Object {
+  
+  String toString() {
+    return getClass().getSimpleName() + '@' + Integer.toHexString(hashCode());
+  }
+}
+   
 
 /////////////////////////////////////////////////////////////
 //                      Vertex Class                       //
 /////////////////////////////////////////////////////////////
 
-class Vertex {
+class Vertex extends Topology {
 
   PVector position;
   List<Edge> edges; // When you create a vertex, the number of edges is unknown.
@@ -22,6 +34,8 @@ class Vertex {
     this.position = position.get();
     this.edges = new ArrayList<Edge>();
   }
+  
+  
 
   void draw(boolean normals) {
     noStroke();
@@ -177,7 +191,7 @@ class Vertex {
 //                       Edge Class                        //
 /////////////////////////////////////////////////////////////
 
-class Edge {
+class Edge extends Topology {
 
   Vertex start;
   Vertex end;
@@ -234,7 +248,7 @@ class Edge {
 //                       Face Class                        //
 /////////////////////////////////////////////////////////////
 
-class Face {
+class Face extends Topology {
 
   Vertex[] vertices;
   //Edge[] edges;
