@@ -185,6 +185,111 @@ class Vertex extends Topology {
   boolean boundary() {
     return (this.faces().length != this.edges().length);
   }
+  
+  float angleBetween(Edge a, Edge b) {
+    // calulate the angle at this vertex between edges a and b
+    return PVector.angleBetween(a.unitVectorFrom(this), b.unitVectorFrom(this));
+  }
+  
+  PVector vectorFrom(Vertex v) {
+    // create a vector to this vertex from v
+    return PVector.sub(this.position, v.position);
+  }
+  
+  PVector unitVectorFrom(Vertex v) {
+    // as above but normalised
+    return this.vectorFrom(v).normalize(null);
+  }
+  
+  float angleBetween(Vertex a, Vertex b) {
+    // calculate the angle <a this b>
+    return PVector.angleBetween(this.vectorFrom(a), this.vectorFrom(b));
+  }
+  
+  float cosAngleBetween(Vertex a, Vertex b) {
+    // calculate cosine of angle <a this b> (faster)
+    return unitVectorFrom(a).dot(unitVectorFrom(b));
+  }
+  
+  float localRegion() {
+    // calculate the area (aMixed) of the voronoi/barycentric region surrounding this vertex
+    // (via Meyer - Discrete Differential-Geometry Operators for Triangulated 2-Manifolds)
+    // this vertex is P
+    this.sortEdges();
+    float aMixed = 0;
+    int n = this.edges().length;
+    int begin = 0;
+    if (this.edges()[0].boundary()) begin = 1; // discount first region if there is no face there 
+    for (int i = begin; i < n; i++) {
+      Edge e = this.edges()[i];
+      Edge prev = this.edges()[(i+(n-1))%n];
+      Vertex r = e.otherVertex(this);
+      Vertex q = prev.otherVertex(this);
+      logger(this, "DEBUG", "localRegion; angle P = " + degrees(this.angleBetween(e, prev)));
+      if (this.cosAngleBetween(r, q) >= 0 &&
+          r.cosAngleBetween(this, q) >= 0 &&
+          q.cosAngleBetween(r, this) >= 0) {
+        // T not obtuse, voronoi safe
+        float pqr = q.angleBetween(r, this);
+        float qrp = r.angleBetween(q, this);
+        logger(this, "DEBUG", "localRegion; angle Q = " + degrees(pqr));
+        logger(this, "DEBUG", "localRegion; angle R = " + degrees(qrp));
+        aMixed += 0.125 * ((sq(e.length()) * (1/tan(pqr))) + (sq(prev.length()) * (1/tan(qrp))));
+      }
+      else { 
+        // Voronoi inappropriate
+        // Add either area(T)/4 or area(T)/2 (using Heron's forumla)
+        float a = e.length();
+        float b = prev.length();
+        float c = PVector.sub(r.position, q.position).normalize(null).mag();
+        float s = (a + b + c) * 0.5;
+        float area = sqrt(s * (s - a) * (s - b) * (s - c));
+        
+        if (this.cosAngleBetween(r, q) < 0) {
+        // if angle at P is obtuse 
+          aMixed += area * 0.5;
+        }
+        else {
+          aMixed += area * 0.25;
+        }
+      }
+    }
+    return aMixed;
+  } 
+  
+  PVector meanCurvatureNormal() {
+    // calculate mean curvature normal for vertex (see diffGeoOps, eqn 8)
+    PVector k = new PVector();
+    float aMixed = this.localRegion(); // edges sorted
+    int n = this.edges().length;
+    for (int i = 0; i < n; i++) {
+      Edge e = this.edges()[i];
+      Edge prev = this.edges()[(i+(n-1))%n];
+      Edge next = this.edges()[(i+1)%n];
+      Vertex xj = e.otherVertex(this);
+      float a = prev.otherVertex(this).angleBetween(this, xj);
+      float b = next.otherVertex(this).angleBetween(this, xj);
+      k.add(PVector.mult(e.vectorFrom(xj), a + b));
+    }
+    k.mult(0.5 * aMixed);
+    return k;
+  }
+  
+  float discreteGaussianCurvature() {
+    // calculate discrete gaussian curvature for vertex (see diffGeoOps, eqn 9)
+    float aMixed = this.localRegion(); // sorts edges
+    float k = 2 * PI;
+    int n = this.edges().length;
+    int begin = 0;
+    if (this.edges()[0].boundary()) begin = 1; // discount first region if there is no face there 
+    for (int i = begin; i < n; i++) {
+      Edge e = this.edges()[i];
+      Edge prev = this.edges()[(i+(n-1))%n];
+      k -= this.angleBetween(e, prev);
+    }
+    k /= aMixed;
+    return k;
+  }
 }
 
 /////////////////////////////////////////////////////////////
@@ -223,7 +328,20 @@ class Edge extends Topology {
   }
   
   PVector vector() {
+    // Vector in direction of edge, with magnitude of edge's length.
     return PVector.sub(this.end.position, this.start.position);
+  }
+  
+  PVector vectorFrom(Vertex v) {
+    // As Edge::vector() but starting at specified vertex. 
+    if (this.start == v) return this.vector();
+    else if (this.end == v) return PVector.mult(this.vector(), -1);
+    else return null;
+  }
+  
+  PVector unitVectorFrom(Vertex v) {
+    // As Edge::vectorFrom() but normalised.
+    return this.vectorFrom(v).normalize(null);
   }
   
   boolean boundary() {
@@ -241,6 +359,12 @@ class Edge extends Topology {
     Face tempFace = this.left;
     this.left = this.right;
     this.right = tempFace;
+  }
+  
+  Vertex otherVertex(Vertex v) {
+    if (this.start == v) return this.end;
+    else if (this.end == v) return this.start;
+    else return null;
   }
 }
 
